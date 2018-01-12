@@ -1,3 +1,5 @@
+(*
+
 MIT License
 
 Copyright (c) 2018 Ondrej Kelle
@@ -19,3 +21,34 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+*)
+
+{$include ..\ext\jedi\jedi.inc}
+
+{$ifdef MSWINDOWS}
+  {$define WINDOWS}
+{$endif}
+
+{$ifdef FPC}
+  {$define HAS_NATIVEUINT}
+  {$define HAS_RAWBYTESTRING}
+  {$define HAS_UINTPTR}
+  {$define SUPPORTS_CLASS_FIELDS}
+  {$define SUPPORTS_UNICODE_STRING}
+{$endif}
+
+{$ifdef DELPHI}
+  {$ifdef DELPHIXE_UP}
+    {$define HAS_NATIVEUINT}
+  {$endif}
+  {$ifdef DELPHI2009_UP}
+    {$define HAS_RAWBYTESTRING}
+  {$endif}
+  {$ifdef DELPHIXE2_UP}
+    {$define HAS_UINTPTR}
+  {$endif}
+  {$ifdef DELPHI2007_UP}
+    {$define HAS_WIDESTRUTILS}
+  {$endif}
+{$endif}

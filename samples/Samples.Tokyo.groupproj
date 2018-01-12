@@ -1,0 +1,60 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{CF870394-AD48-4F3C-B1B5-C3A984593874}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="..\tests\ChakraCoreTests.Tokyo.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\tests\ChakraCoreTestsUI.Tokyo.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="HostSample\ChakraCoreHostSample.Tokyo.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="ChakraCoreTests_Tokyo">
+        <MSBuild Projects="..\tests\ChakraCoreTests.Tokyo.dproj"/>
+    </Target>
+    <Target Name="ChakraCoreTests_Tokyo:Clean">
+        <MSBuild Projects="..\tests\ChakraCoreTests.Tokyo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ChakraCoreTests_Tokyo:Make">
+        <MSBuild Projects="..\tests\ChakraCoreTests.Tokyo.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ChakraCoreTestsUI_Tokyo">
+        <MSBuild Projects="..\tests\ChakraCoreTestsUI.Tokyo.dproj"/>
+    </Target>
+    <Target Name="ChakraCoreTestsUI_Tokyo:Clean">
+        <MSBuild Projects="..\tests\ChakraCoreTestsUI.Tokyo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ChakraCoreTestsUI_Tokyo:Make">
+        <MSBuild Projects="..\tests\ChakraCoreTestsUI.Tokyo.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ChakraCoreHostSample_Tokyo">
+        <MSBuild Projects="HostSample\ChakraCoreHostSample.Tokyo.dproj"/>
+    </Target>
+    <Target Name="ChakraCoreHostSample_Tokyo:Clean">
+        <MSBuild Projects="HostSample\ChakraCoreHostSample.Tokyo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ChakraCoreHostSample_Tokyo:Make">
+        <MSBuild Projects="HostSample\ChakraCoreHostSample.Tokyo.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="ChakraCoreTests_Tokyo;ChakraCoreTestsUI_Tokyo;ChakraCoreHostSample_Tokyo"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="ChakraCoreTests_Tokyo:Clean;ChakraCoreTestsUI_Tokyo:Clean;ChakraCoreHostSample_Tokyo:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="ChakraCoreTests_Tokyo:Make;ChakraCoreTestsUI_Tokyo:Make;ChakraCoreHostSample_Tokyo:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

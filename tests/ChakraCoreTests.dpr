@@ -1,3 +1,5 @@
+(*
+
 MIT License
 
 Copyright (c) 2018 Ondrej Kelle
@@ -19,3 +21,55 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+*)
+
+program ChakraCoreTests;
+
+{$include ..\src\common.inc}
+
+{$ifdef FPC}
+  {$macro ON}
+{$endif}
+
+{$ifdef CONSOLE_TESTRUNNER}
+  {$apptype CONSOLE}
+{$endif}
+
+uses
+  SysUtils, Classes,
+{$ifdef FPC}
+  consoletestrunner, fpcunitreport, plaintestreport,
+{$endif}
+{$ifdef DELPHI}
+  TextTestRunner,
+{$endif}
+  Compat, ChakraCoreVersion, Test_ChakraCore;
+
+{$R *.res}
+
+{$ifdef FPC}
+var
+  Application: TTestRunner;
+{$endif}
+
+begin
+  Writeln(Format('%s %s', [ExtractFileName(ParamStr(0)), GetExeFileVersionString]));
+  Writeln(Format('Built with %s', [GetBuildInfoString]));
+  Writeln(Format('Chakra Core version: %d.%d.%d', [CHAKRA_CORE_MAJOR_VERSION, CHAKRA_CORE_MINOR_VERSION, CHAKRA_CORE_PATCH_VERSION]));
+  Writeln;
+
+{$ifdef FPC}
+  Application := TTestRunner.Create(nil);
+  try
+    Application.Initialize;
+    Application.Run;
+  finally
+    Application.Free;
+  end;
+{$endif}
+
+{$ifdef DELPHI}
+  RunRegisteredTests;
+{$endif}
+end.

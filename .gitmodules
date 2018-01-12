@@ -1,0 +1,3 @@
+[submodule "ext/jedi"]
+	path = ext/jedi
+	url = https://github.com/tondrej/jedi

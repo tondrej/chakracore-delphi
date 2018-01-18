@@ -73,7 +73,8 @@ type
     JsModuleHostInfo_HostDefined = $02,
     JsModuleHostInfo_NotifyModuleReadyCallback = $03,
     JsModuleHostInfo_FetchImportedModuleCallback = $04,
-    JsModuleHostInfo_FetchImportedModuleFromScriptCallback = $05
+    JsModuleHostInfo_FetchImportedModuleFromScriptCallback = $05,
+    JsModuleHostInfo_Url = $06
   );
 
   /// <summary>
@@ -735,6 +736,154 @@ type
   function JsGetDataViewInfo(dataView: JsValueRef; arrayBuffer: PJsValueRef;
     byteOffset, byteLength: PCardinal): JsErrorCode; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 
+  /// <summary>
+  ///     Determine if one JavaScript value is less than another JavaScript value.
+  /// </summary>
+  /// <remarks>
+  ///     <para>
+  ///     This function is equivalent to the <c>&lt;</c> operator in Javascript.
+  ///     </para>
+  ///     <para>
+  ///     Requires an active script context.
+  ///     </para>
+  /// </remarks>
+  /// <param name="object1">The first object to compare.</param>
+  /// <param name="object2">The second object to compare.</param>
+  /// <param name="result">Whether object1 is less than object2.</param>
+  /// <returns>
+  ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
+  /// </returns>
+  function JsLessThan(object1, object2: JsValueRef; out result: bool): JsErrorCode;
+    {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
+  /// <summary>
+  ///     Determine if one JavaScript value is less than or equal to another JavaScript value.
+  /// </summary>
+  /// <remarks>
+  ///     <para>
+  ///     This function is equivalent to the <c>&lt;=</c> operator in Javascript.
+  ///     </para>
+  ///     <para>
+  ///     Requires an active script context.
+  ///     </para>
+  /// </remarks>
+  /// <param name="object1">The first object to compare.</param>
+  /// <param name="object2">The second object to compare.</param>
+  /// <param name="result">Whether object1 is less than or equal to object2.</param>
+  /// <returns>
+  ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
+  /// </returns>
+  function JsLessThanOrEqual(object1, object2: JsValueRef; out result: bool): JsErrorCode;
+    {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
+  /// <summary>
+  ///     Gets an object's property.
+  /// </summary>
+  /// <remarks>
+  ///     Requires an active script context.
+  /// </remarks>
+  /// <param name="object">The object that contains the property.</param>
+  /// <param name="key">The key (JavascriptString) to the property.</param>
+  /// <param name="value">The value of the property.</param>
+  /// <returns>
+  ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
+  /// </returns>
+  function JsObjectGetProperty(_object, key: JsValueRef; out value: JsValueRef): JsErrorCode;
+    {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
+  /// <summary>
+  ///     Puts an object's property.
+  /// </summary>
+  /// <remarks>
+  ///     Requires an active script context.
+  /// </remarks>
+  /// <param name="object">The object that contains the property.</param>
+  /// <param name="key">The key (JavascriptString) to the property.</param>
+  /// <param name="value">The new value of the property.</param>
+  /// <param name="useStrictRules">The property set should follow strict mode rules.</param>
+  /// <returns>
+  ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
+  /// </returns>
+  function JsObjectSetProperty(_object, key, value: JsValueRef; useStrictRules: bool): JsErrorCode;
+    {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
+  /// <summary>
+  ///     Determines whether an object has a property.
+  /// </summary>
+  /// <remarks>
+  ///     Requires an active script context.
+  /// </remarks>
+  /// <param name="object">The object that may contain the property.</param>
+  /// <param name="key">The key (JavascriptString) to the property.</param>
+  /// <param name="hasProperty">Whether the object (or a prototype) has the property.</param>
+  /// <returns>
+  ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
+  /// </returns>
+  function JsObjectHasProperty(_object, key: JsValueRef; out hasProperty: bool): JsErrorCode;
+    {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
+  /// <summary>
+  ///     Defines a new object's own property from a property descriptor.
+  /// </summary>
+  /// <remarks>
+  ///     Requires an active script context.
+  /// </remarks>
+  /// <param name="object">The object that has the property.</param>
+  /// <param name="key">The key (JavascriptString) to the property.</param>
+  /// <param name="propertyDescriptor">The property descriptor.</param>
+  /// <param name="result">Whether the property was defined.</param>
+  /// <returns>
+  ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
+  /// </returns>
+  function JsObjectDefineProperty(_object, key, propertyDescriptor: JsValueRef; out result: bool): JsErrorCode;
+    {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
+  /// <summary>
+  ///     Deletes an object's property.
+  /// </summary>
+  /// <remarks>
+  ///     Requires an active script context.
+  /// </remarks>
+  /// <param name="object">The object that contains the property.</param>
+  /// <param name="key">The key (JavascriptString) to the property.</param>
+  /// <param name="useStrictRules">The property set should follow strict mode rules.</param>
+  /// <param name="result">Whether the property was deleted.</param>
+  /// <returns>
+  ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
+  /// </returns>
+  function JsObjectDeleteProperty(_object, key: JsValueRef; useStrictRules: bool; out result: bool): JsErrorCode;
+    {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
+  /// <summary>
+  ///     Gets a property descriptor for an object's own property.
+  /// </summary>
+  /// <remarks>
+  ///     Requires an active script context.
+  /// </remarks>
+  /// <param name="object">The object that has the property.</param>
+  /// <param name="key">The key (JavascriptString) to the property.</param>
+  /// <param name="propertyDescriptor">The property descriptor.</param>
+  /// <returns>
+  ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
+  /// </returns>
+  function JsObjectGetOwnPropertyDescriptor(_object, key: JsValueRef; out propertyDescriptor: JsValueRef): JsErrorCode;
+    {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
+  /// <summary>
+  ///     Determines whether an object has a non-inherited property.
+  /// </summary>
+  /// <remarks>
+  ///     Requires an active script context.
+  /// </remarks>
+  /// <param name="object">The object that may contain the property.</param>
+  /// <param name="key">The key (JavascriptString) to the property.</param>
+  /// <param name="hasOwnProperty">Whether the object has the non-inherited property.</param>
+  /// <returns>
+  ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
+  /// </returns>
+  function JsObjectHasOwnProperty(_object, key: JsValueRef; out hasOwnProperty: bool): JsErrorCode;
+    {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
 implementation
 
 {$ifdef MSWINDOWS}
@@ -778,5 +927,14 @@ const
   function JsHasOwnProperty; external _chakracore;
   function JsCopyStringOneByte; external _chakracore;
   function JsGetDataViewInfo; external _chakracore;
+  function JsLessThan; external _chakracore;
+  function JsLessThanOrEqual; external _chakracore;
+  function JsObjectGetProperty; external _chakracore;
+  function JsObjectSetProperty; external _chakracore;
+  function JsObjectHasProperty; external _chakracore;
+  function JsObjectDefineProperty; external _chakracore;
+  function JsObjectDeleteProperty; external _chakracore;
+  function JsObjectGetOwnPropertyDescriptor; external _chakracore;
+  function JsObjectHasOwnProperty; external _chakracore;
 
 end.

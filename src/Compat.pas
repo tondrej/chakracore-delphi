@@ -175,7 +175,7 @@ end;
 
 {$ifdef DELPHIXE2_UP}
 const
-  ArchitectureStrings: array[TOSVersion.TArchitecture] of string = ('x86', 'x64', 'arm32'{$ifdef DELPHIX_TOKYO_UP}, 'arm64'{$endif});
+  ArchitectureStrings: array[TOSVersion.TArchitecture] of string = ('x86', 'x64', 'arm32'{$ifdef DELPHIX_BERLIN_UP}, 'arm64'{$endif});
   PlatformStrings: array[TOSVersion.TPlatform] of string = ('Windows', 'MacOS', 'iOS', 'Android', 'WinRT', 'Linux');
 {$endif}
 

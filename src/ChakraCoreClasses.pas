@@ -147,10 +147,11 @@ type
     FName: UnicodeString;
     FParsed: Boolean;
     FResult: JsvalueRef;
-    FSpecifier: JsValueRef;
+    FURL: UnicodeString;
+
+    procedure SetURL(const Value: UnicodeString);
   public
     constructor Create(AContext: TChakraCoreContext; const AName: UnicodeString; ARefModule: JsModuleRecord);
-    destructor Destroy; override;
 
     procedure Parse(const Source: UTF8String); overload;
     procedure Parse(const Source: UnicodeString); overload;
@@ -160,7 +161,7 @@ type
     property Name: UnicodeString read FName;
     property Parsed: Boolean read FParsed;
     property Result: JsValueRef read FResult;
-    property Specifier: JsValueRef read FSpecifier;
+    property URL: UnicodeString read FURL write SetURL;
   end;
 
   TLoadModuleEvent = procedure(Sender: TObject; Module: TChakraModule) of object;
@@ -714,33 +715,25 @@ end;
 
 { TChakraModule public }
 
-constructor TChakraModule.Create(AContext: TChakraCoreContext; const AName: UnicodeString;
-  ARefModule: JsModuleRecord);
+constructor TChakraModule.Create(AContext: TChakraCoreContext; const AName: UnicodeString; ARefModule: JsModuleRecord);
+var
+  Specifier: JsValueRef;
 begin
   inherited Create;
   FContext := AContext;
-  if AName = '' then
-    FSpecifier := JS_INVALID_REFERENCE
-  else
-  begin
-    FSpecifier := StringToJsString(AName);
-    ChakraCoreCheck(JsAddRef(FSpecifier, nil));
-  end;
   FName := AName;
-  FResult := JsUndefinedValue;
+  FURL := '';
 
-  ChakraCoreCheck(JsInitializeModuleRecord(ARefModule, FSpecifier, FHandle));
+  FResult := JsUndefinedValue;
+  Specifier := JS_INVALID_REFERENCE;
+  if AName <> '' then
+    Specifier := StringToJsString(AName);
+
+  ChakraCoreCheck(JsInitializeModuleRecord(ARefModule, Specifier, FHandle));
   ChakraCoreCheck(JsSetModuleHostInfo(FHandle, JsModuleHostInfo_FetchImportedModuleCallback, @FetchImportedModuleCallback));
   ChakraCoreCheck(JsSetModuleHostInfo(FHandle, JsModuleHostInfo_FetchImportedModuleFromScriptCallback, @FetchImportedModuleFromScriptCallback));
   ChakraCoreCheck(JsSetModuleHostInfo(FHandle, JsModuleHostInfo_NotifyModuleReadyCallback, @NotifyModuleReadyCallback));
-  ChakraCoreCheck(JsSetModuleHostInfo(FHandle, JsModuleHostInfo_HostDefined, FSpecifier));
-end;
-
-destructor TChakraModule.Destroy;
-begin
-  if FSpecifier <> JS_INVALID_REFERENCE then
-    ChakraCoreCheck(JsRelease(FSpecifier, nil));
-  inherited Destroy;
+  ChakraCoreCheck(JsSetModuleHostInfo(FHandle, JsModuleHostInfo_HostDefined, Specifier));
 end;
 
 procedure TChakraModule.Parse(const Source: UTF8String);
@@ -764,6 +757,22 @@ begin
     ChakraCoreCheck(JsParseModuleSource(Handle, 0, PByte(PUnicodeChar(Source)), Length(Source) * SizeOf(UnicodeChar),
       JsParseModuleSourceFlags_DataIsUTF16LE, Error));
     FParsed := True;
+  end;
+end;
+
+procedure TChakraModule.SetURL(const Value: UnicodeString);
+var
+  Specifier: JsValueRef;
+begin
+  if Value <> FURL then
+  begin
+    Specifier := JS_INVALID_REFERENCE;
+    if Value <> '' then
+      Specifier := StringToJsString(Value);
+
+    ChakraCoreCheck(JsSetModuleHostInfo(FHandle, JsModuleHostInfo_Url, Specifier));
+
+    FURL := Value;
   end;
 end;
 

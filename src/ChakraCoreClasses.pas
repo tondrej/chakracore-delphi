@@ -1287,29 +1287,7 @@ begin
 end;
 
 { TChakraCoreNativeObject protected }
-(*
-function TNativeObject.DoGetProperty(const PropName: UnicodeString): JsValueRef;
-begin
-  Result := JsGetProperty(TargetInstance, PropName);
-  if Assigned(FOnGetProperty) then
-    FOnGetProperty(Self, PropName, Result);
-end;
 
-function TNativeObject.DoHasProperty(const PropName: UnicodeString): Boolean;
-begin
-  Result := JsHasProperty(TargetInstance, PropName);
-  if Assigned(FOnHasProperty) then
-    FOnHasProperty(Self, PropName, Result);
-end;
-
-function TNativeObject.DoSetProperty(const PropName: UnicodeString; Value: JsValueRef): Boolean;
-begin
-  Result := True;
-  if Assigned(FOnSetProperty) then
-    FOnSetProperty(Self, PropName, Value);
-  JsSetProperty(TargetInstance, PropName, Value);
-end;
-*)
 {$ifndef SUPPORTS_CLASS_FIELDS}
 class function TNativeObject.Prototype: JsValueRef;
 begin

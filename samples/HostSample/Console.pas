@@ -31,9 +31,6 @@ interface
 {$include common.inc}
 
 uses
-{$ifdef WINDOWS}
-  Windows,
-{$endif}
   SysUtils, Classes,
 {$ifdef HAS_WIDESTRUTILS}
   WideStrUtils,
@@ -43,18 +40,23 @@ uses
 type
   TInfoLevel = (ilNone, ilInfo, ilWarn, ilError);
 
-  TConsole = class(TChakraCoreNativeObject)
+  TConsolePrintEvent = procedure (Sender: TObject; const Text: UnicodeString; Level: TInfoLevel = ilNone) of object;
+
+  TConsole = class(TNativeObject)
   private
+    FOnPrint: TConsolePrintEvent;
+    
     function Assert(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
     function Log(Arguments: PJsValueRef; ArgumentCount: Word; Level: TInfoLevel): JsValueRef;
     function LogError(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
     function LogInfo(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
     function LogNone(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
     function LogWarn(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
-    procedure Print(const S: UTF8String; Level: TInfoLevel = ilNone; UseAnsiColors: Boolean = True); overload;
-    procedure Print(const S: UnicodeString; Level: TInfoLevel = ilNone; UseAnsiColors: Boolean = True); overload;
   protected
+    procedure DoPrint(const Text: UnicodeString; Level: TInfoLevel = ilNone); virtual;
     class procedure RegisterMethods(AInstance: JsValueRef); override;
+  public
+    property OnPrint: TConsolePrintEvent read FOnPrint write FOnPrint;
   end;
 
 implementation
@@ -113,7 +115,7 @@ begin
     Exit;
 
   if ArgumentCount = 0 then // no message/data
-    Print(SMessage, ilError)
+    DoPrint(SMessage, ilError)
   else
     Log(Arguments, ArgumentCount, ilError);
 end;
@@ -183,7 +185,7 @@ begin
       Inc(Arg);
     end;
   end;
-  Print(S, Level, {$ifdef WINDOWS}False{$else}True{$endif}); // TODO Windows 10 console supports ANSI colors
+  DoPrint(S, Level);
 end;
 
 function TConsole.LogError(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
@@ -206,47 +208,13 @@ begin
   Result := Log(Arguments, ArgumentCount, ilWarn);
 end;
 
-procedure TConsole.Print(const S: UTF8String; Level: TInfoLevel; UseAnsiColors: Boolean);
-const
-  StartBlocks: array[TInfoLevel] of RawByteString = ('', #$1b'[32;1m', #$1b'[33;1m', #$1b'[31;1m');
-  EndBlocks: array[Boolean] of RawByteString = ('', #$1b'[0m');
-{$ifdef WINDOwS}
-  BackgroundMask = $F0;
-  TextColors: array[TInfoLevel] of Word = (0, FOREGROUND_GREEN or FOREGROUND_INTENSITY,
-    FOREGROUND_GREEN or FOREGROUND_RED or FOREGROUND_INTENSITY, FOREGROUND_RED or FOREGROUND_INTENSITY);
-var
-  Info: TConsoleScreenBufferInfo;
-{$endif}
-begin
-{$ifdef WINDOWS}
-  if UseAnsiColors then
-    Writeln(StartBlocks[Level], S, EndBlocks[Level <> ilNone])
-  else
-  begin
-    if (Level = ilNone) or not GetConsoleScreenBufferInfo(TTextRec(Output).Handle, Info) then
-    begin
-      Writeln(S);
-      Exit;
-    end;
-
-    SetConsoleTextAttribute(TTextRec(Output).Handle, Info.wAttributes and BackgroundMask or TextColors[Level]);
-    try
-      Writeln(S);
-    finally
-      SetConsoleTextAttribute(TTextRec(Output).Handle, Info.wAttributes);
-    end;
-  end;
-{$else}
-  Writeln(StartBlocks[Level], S, EndBlocks[Level <> ilNone]);
-{$endif}
-end;
-
-procedure TConsole.Print(const S: UnicodeString; Level: TInfoLevel; UseAnsiColors: Boolean);
-begin
-  Print(UTF8Encode(S), Level, UseAnsiColors);
-end;
-
 { TConsole protected }
+
+procedure TConsole.DoPrint(const Text: UnicodeString; Level: TInfoLevel);
+begin
+  if Assigned(FOnPrint) then
+    FOnPrint(Self, Text, Level);
+end;
 
 class procedure TConsole.RegisterMethods(AInstance: JsValueRef);
 begin

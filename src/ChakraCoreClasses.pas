@@ -35,7 +35,7 @@ uses
   Windows,
 {$endif}
   Classes, SysUtils, Contnrs,
-  Compat, ChakraCore, ChakraCommon;
+  Compat, ChakraCore, ChakraCommon, ChakraCoreUtils;
 
 type
   TChakraCoreContext = class;
@@ -164,7 +164,10 @@ type
     property URL: UnicodeString read FURL write SetURL;
   end;
 
+  TNativeObject = class;
+  
   TLoadModuleEvent = procedure(Sender: TObject; Module: TChakraModule) of object;
+  TNativeObjectCreatedEvent = procedure(Sender: TObject; NativeObject: TNativeObject) of object;
 
   { TChakraCoreContext }
 
@@ -175,10 +178,12 @@ type
     FMessageQueue: TQueue;
     FModules: TStringList;
     FName: UnicodeString;
+    FProxyTargetSymbol: JsValueRef;
     FRuntime: TChakraCoreRuntime;
     FSourceContext: NativeUInt;
 
     FOnLoadModule: TLoadModuleEvent;
+    FOnNativeObjectCreated: TNativeObjectCreatedEvent;
 
     function GetData: Pointer;
     function GetHandle: JsContextRef;
@@ -191,12 +196,14 @@ type
     procedure ClearModules;
     function CreateModule(const AName: UnicodeString; ARefModule: JsModuleRecord): TChakraModule; virtual;
     procedure DoLoadModule(Module: TChakraModule); virtual;
+    procedure DoNativeObjectCreated(NativeObject: TNativeObject); virtual;
     procedure DoPromiseContinuation(Task: JsValueRef); virtual;
     function HandleFetchImportedModuleCallback(referencingModule: JsModuleRecord; specifier: JsValueRef;
       out dependentModuleRecord: JsModuleRecord): JsErrorCode; virtual;
-    function HandleFetchImportedModuleFromScriptCallback(dwReferencingSourceContext: JsSourceContext; specifier: JsValueRef;
-      out dependentModuleRecord: JsModuleRecord): JsErrorCode; virtual;
-    function HandleNotifyModuleReadyCallback(referencingModule: JsModuleRecord; exceptionVar: JsValueRef): JsErrorCode; virtual;
+    function HandleFetchImportedModuleFromScriptCallback(dwReferencingSourceContext: JsSourceContext;
+      specifier: JsValueRef; out dependentModuleRecord: JsModuleRecord): JsErrorCode; virtual;
+    function HandleNotifyModuleReadyCallback(referencingModule: JsModuleRecord; exceptionVar: JsValueRef): JsErrorCode;
+      virtual;
     function ModuleNeeded(const AName: UnicodeString; ARefModule: JsModuleRecord = nil): TChakraModule;
 
     procedure ProcessMessages;
@@ -207,7 +214,8 @@ type
     procedure Activate;
     procedure AddModule(const AName: UTF8String); overload;
     procedure AddModule(const AName: UnicodeString); overload;
-    function CallFunction(const AName: UTF8String; const Args: array of JsValueRef; Instance: JsValueRef = nil): JsValueRef;
+    function CallFunction(const AName: UTF8String; const Args: array of JsValueRef;
+      Instance: JsValueRef = nil): JsValueRef;
     class function CurrentContext: TChakraCoreContext;
     function FindModule(const AName: UnicodeString): TChakraModule; overload;
     function FindModule(AHandle: JsModuleRecord): TChakraModule; overload;
@@ -221,50 +229,81 @@ type
     property ModuleNames[Index: Integer]: UnicodeString read GetModuleNames;
     property Modules[Index: Integer]: TChakraModule read GetModules;
     property Name: UnicodeString read FName;
+    property ProxyTargetSymbol: JsValueRef read FProxyTargetSymbol;
     property Runtime: TChakraCoreRuntime read FRuntime;
 
     property OnLoadModule: TLoadModuleEvent read FOnLoadModule write FOnLoadModule;
+    property OnNativeObjectCreated: TNativeObjectCreatedEvent read FOnNativeObjectCreated write FOnNativeObjectCreated;
   end;
 
-  TChakraCoreNativeClass = class of TChakraCoreNativeObject;
+  { TNativeArrayBuffer }
 
-  TChakraCoreNativeMethod = function (Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef of object;
+  TChakraCoreNativeArrayBuffer = class
+  private
+    FBuffer: Pointer;
+    FBufferSize: Integer;
+    FHandle: JsValueRef;
+  public
+    constructor Create(ABufferSize: Integer); virtual;
+    destructor Destroy; override;
 
-  TChakraCoreNativeObject = class
+    property Buffer: Pointer read FBuffer;
+    property BufferSize: Integer read FBufferSize;
+    property Handle: JsValueRef read FHandle;
+  end;
+
+  TNativeClass = class of TNativeObject;
+
+  TNativeMethod = function(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef of object;
+  TNativeGetAccessorMethod = function: JsValueRef of object;
+  TNativeSetAccessorMethod = procedure(Value: PJsValueRef) of object;
+
+  { TNativeObject }
+
+  TNativeObject = class
   private
     FInstance: JsValueRef;
+    FTargetInstance: JsValueRef;
+
 {$ifdef SUPPORTS_CLASS_FIELDS}
     class var Prototype: JsValueRef;
 {$endif}
 
+    function GetContext: TChakraCoreContext;
     function GetContextHandle: JsContextRef;
+    procedure Proxify;
   protected
 {$ifndef SUPPORTS_CLASS_FIELDS}
     class function Prototype: JsValueRef;
 {$endif}
+    class procedure RegisterPrototype; virtual;
     class procedure RegisterMethod(AInstance: JsValueRef; const AName: UnicodeString; AMethod: Pointer;
       UseStrictRules: Boolean = True); virtual;
-    class procedure RegisterMethods(AInstance: JsValueRef); virtual; abstract;
+    class procedure RegisterMethods(AInstance: JsValueRef); virtual;
+    class procedure RegisterProperties(AInstance: JsValueRef); virtual;
+    class procedure RegisterNamedProperty(AInstance: JsValueRef; const AName: UnicodeString;
+      Configurable, Enumerable: Boolean; GetAccessor, SetAccessor: Pointer); overload; virtual;
+    class procedure RegisterNamedProperty(AInstance: JsValueRef; const AName: UnicodeString;
+      Configurable, Enumerable, Writable: Boolean; Value: JsValueRef); overload; virtual;
   public
     constructor Create(Arguments: PJsValueRef = nil; ArgumentCount: Word = 0); virtual;
     destructor Destroy; override;
 
     class procedure Project(const AName: UnicodeString = ''; UseStrictRules: Boolean = True);
 
+    property Context: TChakraCoreContext read GetContext;
     property ContextHandle: JsContextRef read GetContextHandle;
     property Instance: JsValueRef read FInstance;
+    property TargetInstance: JsValueRef read FTargetInstance;
   end;
 
 implementation
-
-uses
-  ChakraCoreUtils;
 
 {$ifndef SUPPORTS_CLASS_FIELDS}
 type
   PProjectedClassInfo = ^TProjectedClassInfo;
   TProjectedClassInfo = record
-    AClass: TChakraCoreNativeClass;
+    AClass: TNativeClass;
     APrototype: JsValueRef;
   end;
 
@@ -272,12 +311,12 @@ var
   Lock: TRTLCriticalSection;
   ProjectedClasses: TList = nil;
 
-function AddPrototype(AClass: TChakraCoreNativeClass; APrototype: JsValueRef = nil): Integer;
+function AddPrototype(AClass: TNativeClass; APrototype: JsValueRef = nil): Integer;
 var
   Info: PProjectedClassInfo;
 begin
   if not Assigned(APrototype) then
-    ChakraCoreCheck(JsCreateObject(APrototype));
+    APrototype := JsCreateObject;
 
   GetMem(Info, SizeOf(TProjectedClassInfo));
   try
@@ -291,7 +330,7 @@ begin
   end;
 end;
 
-function FindPrototype(AClass: TChakraCoreNativeClass): JsValueRef;
+function FindPrototype(AClass: TNativeClass): JsValueRef;
 var
   I: Integer;
 begin
@@ -345,7 +384,8 @@ begin
     TChakraCoreRuntime(callbackState).DoBeforeCollect;
 end;
 
-function ThreadServiceCallback(callback: JsBackgroundWorkItemCallback; callbackState: Pointer): bool; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+function ThreadServiceCallback(callback: JsBackgroundWorkItemCallback; callbackState: Pointer): bool;
+  {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 begin
   Result := False; // let ChakraCore handle this work item
 
@@ -357,18 +397,19 @@ end;
 function FetchImportedModuleCallBack(referencingModule: JsModuleRecord; specifier: JsValueRef;
   out dependentModuleRecord: JsModuleRecord): JsErrorCode; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 begin
-  Result := TChakraCoreContext.CurrentContext.HandleFetchImportedModuleCallback(referencingModule, specifier, dependentModuleRecord);
+  Result := TChakraCoreContext.CurrentContext.HandleFetchImportedModuleCallback(referencingModule, specifier,
+    dependentModuleRecord);
 end;
 
 function FetchImportedModuleFromScriptCallBack(dwReferencingSourceContext: JsSourceContext; specifier: JsValueRef;
   out dependentModuleRecord: JsModuleRecord): JsErrorCode; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 begin
-  Result := TChakraCoreContext.CurrentContext.HandleFetchImportedModuleFromScriptCallback(dwReferencingSourceContext, specifier,
-    dependentModuleRecord);
+  Result := TChakraCoreContext.CurrentContext.HandleFetchImportedModuleFromScriptCallback(dwReferencingSourceContext,
+    specifier, dependentModuleRecord);
 end;
 
-function MemoryAllocationCallback(callbackState: Pointer; allocationEvent: JsMemoryEventType; allocationSize: size_t): bool;
-  {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+function MemoryAllocationCallback(callbackState: Pointer; allocationEvent: JsMemoryEventType;
+  allocationSize: size_t): bool; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 begin
   Result := True;
 
@@ -383,14 +424,78 @@ begin
     end;
 end;
 
-function NativeClass_ConstructorCallback(Callee: JsValueRef; IsConstructCall: bool; Arguments: PJsValueRef; ArgumentCount: Word;
+type
+  TProxyGetArgKind = (pgaThisArg, pgaTarget, pgaProp, pgaReceiver);
+  PJsProxyGetArgs = ^TJsProxyGetArgs;
+  TJsProxyGetArgs = array[TProxyGetArgKind] of JsValueRef;
+
+function Proxy_GetCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyGetArgs; ArgCount: Word;
   CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 var
-  NativeClass: TChakraCoreNativeClass absolute CallbackState;
-  NativeInstance: TChakraCoreNativeObject;
+  NativeInstance: TNativeObject absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 4) then
+    raise Exception.Create('Invalid proxy ''get'' arguments');
+
+  if not JsEqual(Args^[pgaTarget], NativeInstance.TargetInstance) then
+    raise Exception.Create('Proxy ''get'' target not the registered target');
+
+  if JsEqual(Args^[pgaProp], NativeInstance.Context.ProxyTargetSymbol) then
+    Result := NativeInstance.TargetInstance
+  else
+    Result := JsGetProperty(NativeInstance.TargetInstance, Args^[pgaProp]);
+end;
+
+type
+  TProxySetArgKind = (psaThisArg, psaTarget, psaProp, psaValue, psaReceiver);
+  PJsProxySetArgs = ^TJsProxySetArgs;
+  TJsProxySetArgs = array[TProxySetArgKind] of JsValueRef;
+
+function Proxy_SetCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxySetArgs; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  NativeInstance: TNativeObject absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 5) then
+    raise Exception.Create('Invalid proxy ''set'' arguments');
+
+  if not JsEqual(Args^[psaTarget], NativeInstance.TargetInstance) then
+    raise Exception.Create('Proxy ''set'' target not the registered target');
+
+  JsSetProperty(NativeInstance.TargetInstance, Args^[psaProp], Args^[psaValue]);
+  Result := JsTrueValue;
+end;
+
+type
+  TProxyHasArgKind = (phaThisArg, phaTarget, phaProp);
+  PJsProxyHasArgs = ^TJsProxyHasArgs;
+  TJsProxyHasArgs = array[TProxyHasArgKind] of JsValueRef;
+
+function Proxy_HasCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyHasArgs; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  NativeInstance: TNativeObject absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 3) then
+    raise Exception.Create('Invalid proxy ''has'' arguments');
+
+  if not JsEqual(Args^[phaTarget], NativeInstance.TargetInstance) then
+    raise Exception.Create('Proxy ''has'' target not the registered target');
+
+  Result := BooleanToJsBoolean(JsHasProperty(Args^[phaTarget], Args^[phaProp]));
+end;
+
+function Native_ConstructorCallback(Callee: JsValueRef; IsConstructCall: bool; Arguments: PJsValueRef;
+  ArgumentCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  NativeClass: TNativeClass absolute CallbackState;
+  NativeInstance: TNativeObject;
 begin
   Result := JsUndefinedValue;
   try
+    if not IsConstructCall then
+      raise Exception.Create('Constructor called as a method');
+
     Inc(Arguments);
     Dec(ArgumentCount);
 
@@ -401,13 +506,16 @@ begin
   end;
 end;
 
-function NativeClass_MethodCallback(Callee: JsValueRef; IsConstructCall: bool; Arguments: PJsValueRef; ArgumentCount: Word;
-  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+function Native_MethodCallback(Callee: JsValueRef; IsConstructCall: bool; Arguments: PJsValueRef;
+  ArgumentCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 var
-  NativeMethod: TChakraCoreNativeMethod;
+  NativeMethod: TNativeMethod;
 begin
   Result := JsUndefinedValue;
   try
+    if IsConstructCall then
+      raise Exception.Create('Method called as a constructor');
+
     if not Assigned(Arguments) or (ArgumentCount = 0) then
       raise Exception.Create('Invalid arguments');
 
@@ -417,7 +525,7 @@ begin
     TMethod(NativeMethod).Code := CallbackState;
     TMethod(NativeMethod).Data := JsGetExternalData(Arguments^);
 
-    if Arguments^ <> TChakraCoreNativeObject(TMethod(NativeMethod).Data).Instance then
+    if Arguments^ <> TNativeObject(TMethod(NativeMethod).Data).Instance then
       raise Exception.Create('thisarg not the registered instance');
 
     Inc(Arguments);
@@ -430,7 +538,59 @@ begin
   end;
 end;
 
-procedure NativeClass_FinalizeCallback(data: Pointer); {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+function Native_PropGetCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRef; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  NativeMethod: TNativeGetAccessorMethod;
+begin
+  Result := JsUndefinedValue;
+  try
+    if IsConstructCall then
+      raise Exception.Create('Property get accessor called as a constructor');
+
+    if not Assigned(Args) or (ArgCount <> 1) then // thisarg
+      raise Exception.Create('Invalid arguments');
+
+    TMethod(NativeMethod).Code := CallbackState;
+    TMethod(NativeMethod).Data := JsGetExternalData(Args^);
+
+    if Args^ <> TNativeObject(TMethod(NativeMethod).Data).Instance then
+      raise Exception.Create('thisarg not the registered instance');
+
+    Result := NativeMethod;
+  except
+    on E: Exception do
+      JsThrowError(WideFormat('[%s] %s', [E.ClassName, E.Message]));
+  end;
+end;
+
+function Native_PropSetCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRefArray; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  NativeMethod: TNativeSetAccessorMethod;
+begin
+  Result := JsUndefinedValue;
+  try
+    if IsConstructCall then
+      raise Exception.Create('Property set accessor called as a constructor');
+
+    if not Assigned(Args) or (ArgCount <> 2) then // thisarg, value
+      raise Exception.Create('Invalid arguments');
+
+    TMethod(NativeMethod).Code := CallbackState;
+    TMethod(NativeMethod).Data := JsGetExternalData(Args^[0]);
+
+    if Args^[0] <> TNativeObject(TMethod(NativeMethod).Data).Instance then
+      raise Exception.Create('thisarg not the registered instance');
+
+    NativeMethod(@Args^[1]);
+  except
+    on E: Exception do
+      JsThrowError(WideFormat('[%s] %s', [E.ClassName, E.Message]));
+  end;
+end;
+
+procedure Native_FinalizeCallback(data: Pointer); {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 begin
   TObject(data).Free;
 end;
@@ -792,7 +952,7 @@ end;
 function TChakraCoreContext.GetGlobal: JsValueRef;
 begin
   if FGlobal = JS_INVALID_REFERENCE then
-    ChakraCoreCheck(JsGetGlobalObject(FGlobal));
+    FGlobal := JsGlobal;
   Result := FGlobal;
 end;
 
@@ -852,6 +1012,12 @@ procedure TChakraCoreContext.DoLoadModule(Module: TChakraModule);
 begin
   if Assigned(FOnLoadModule) then
     FOnLoadModule(Self, Module);
+end;
+
+procedure TChakraCoreContext.DoNativeObjectCreated(NativeObject: TNativeObject);
+begin
+  if Assigned(FOnNativeObjectCreated) then
+    FOnNativeObjectCreated(Self, NativeObject);
 end;
 
 procedure TChakraCoreContext.DoPromiseContinuation(Task: JsValueRef);
@@ -979,6 +1145,7 @@ procedure TChakraCoreContext.Activate;
 begin
   ChakraCoreCheck(JsSetCurrentContext(Handle));
   ChakraCoreCheck(JsSetPromiseContinuationCallback(PromiseContinuation, Self));
+  FProxyTargetSymbol := JsCreateSymbol('__proxy_target__');
 end;
 
 procedure TChakraCoreContext.AddModule(const AName: UTF8String);
@@ -1044,7 +1211,6 @@ begin
     ProcessMessages;
   finally
     FName := '';
-    Dec(FSourceContext);
   end;
 end;
 
@@ -1065,47 +1231,168 @@ begin
   end;
 end;
 
+{ TChakraCoreNativeArrayBuffer public }
+
+constructor TChakraCoreNativeArrayBuffer.Create(ABufferSize: Integer);
+begin
+  inherited Create;
+  FBuffer := AllocMem(ABufferSize);
+  FBufferSize := ABufferSize;
+  ChakraCoreCheck(JsCreateExternalArrayBuffer(FBuffer, FBufferSize, Native_FinalizeCallback, Self, FHandle));
+end;
+
+destructor TChakraCoreNativeArrayBuffer.Destroy;
+begin
+  if Assigned(FBuffer) then
+    FreeMem(FBuffer);
+  inherited Destroy;
+end;
+
 { TChakraCoreNativeObject private }
 
-function TChakraCoreNativeObject.GetContextHandle: JsContextRef;
+function TNativeObject.GetContext: TChakraCoreContext;
+var
+  P: Pointer absolute Result;
+begin
+  ChakraCoreCheck(JsGetContextData(ContextHandle, P));
+end;
+
+function TNativeObject.GetContextHandle: JsContextRef;
 begin
   ChakraCoreCheck(JsGetContextOfObject(FInstance, Result));
 end;
 
-{ TChakraCoreNativeObject protected }
+procedure TNativeObject.Proxify;
+var
+  Handler: JsValueRef;
+begin
+  JsSetProperty(FInstance, Context.ProxyTargetSymbol, FInstance);
+  Handler := JsCreateObject;
+  JsSetCallback(Handler, 'get', @Proxy_GetCallback, Self);
+  JsSetCallback(Handler, 'set', @Proxy_SetCallback, Self);
+  JsSetCallback(Handler, 'has', @Proxy_HasCallback, Self);
+  FTargetInstance := FInstance;
+  FInstance := JsNew('Proxy', [JsUndefinedValue, FInstance, Handler]);
+end;
 
+class procedure TNativeObject.RegisterPrototype;
+begin
+  {$ifdef SUPPORTS_CLASS_FIELDS}
+    Prototype := JsCreateObject;
+  {$else}
+    AddPrototype(Self);
+  {$endif}
+  RegisterMethods(Prototype);
+  RegisterProperties(Prototype);
+end;
+
+{ TChakraCoreNativeObject protected }
+(*
+function TNativeObject.DoGetProperty(const PropName: UnicodeString): JsValueRef;
+begin
+  Result := JsGetProperty(TargetInstance, PropName);
+  if Assigned(FOnGetProperty) then
+    FOnGetProperty(Self, PropName, Result);
+end;
+
+function TNativeObject.DoHasProperty(const PropName: UnicodeString): Boolean;
+begin
+  Result := JsHasProperty(TargetInstance, PropName);
+  if Assigned(FOnHasProperty) then
+    FOnHasProperty(Self, PropName, Result);
+end;
+
+function TNativeObject.DoSetProperty(const PropName: UnicodeString; Value: JsValueRef): Boolean;
+begin
+  Result := True;
+  if Assigned(FOnSetProperty) then
+    FOnSetProperty(Self, PropName, Value);
+  JsSetProperty(TargetInstance, PropName, Value);
+end;
+*)
 {$ifndef SUPPORTS_CLASS_FIELDS}
-class function TChakraCoreNativeObject.Prototype: JsValueRef;
+class function TNativeObject.Prototype: JsValueRef;
 begin
   Result := FindPrototype(Self);
 end;
 {$endif}
 
-class procedure TChakraCoreNativeObject.RegisterMethod(AInstance: JsValueRef; const AName: UnicodeString;
+class procedure TNativeObject.RegisterMethod(AInstance: JsValueRef; const AName: UnicodeString;
   AMethod: Pointer; UseStrictRules: Boolean);
 begin
-  JsSetCallback(AInstance, AName, NativeClass_MethodCallback, AMethod, UseStrictRules);
+  JsSetCallback(AInstance, AName, Native_MethodCallback, AMethod, UseStrictRules);
+end;
+
+class procedure TNativeObject.RegisterMethods(AInstance: JsValueRef);
+begin
+  // do nothing
+end;
+
+class procedure TNativeObject.RegisterProperties(AInstance: JsValueRef);
+begin
+  // do nothing
+end;
+
+class procedure TNativeObject.RegisterNamedProperty(AInstance: JsValueRef; const AName: UnicodeString;
+  Configurable, Enumerable: Boolean; GetAccessor, SetAccessor: Pointer);
+var
+  Descriptor: JsValueRef;
+  PropName: UTF8String;
+  PropId: JsPropertyIdRef;
+  B: ByteBool;
+begin
+  Descriptor := JsCreateObject;
+  JsSetProperty(Descriptor, 'configurable', BooleanToJsBoolean(Configurable), True);
+  JsSetProperty(Descriptor, 'enumerable', BooleanToJsBoolean(Enumerable), True);
+  if Assigned(GetAccessor) then
+    JsSetCallback(Descriptor, 'get', Native_PropGetCallback, @GetAccessor, True);
+  if Assigned(SetAccessor) then
+    JsSetCallback(Descriptor, 'set', @Native_PropSetCallback, @SetAccessor, True);
+  PropName := UTF8Encode(AName);
+  ChakraCoreCheck(JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId));
+  ChakraCoreCheck(JsDefineProperty(AInstance, PropId, Descriptor, B));
+end;
+
+class procedure TNativeObject.RegisterNamedProperty(AInstance: JsValueRef; const AName: UnicodeString;
+  Configurable, Enumerable, Writable: Boolean; Value: JsValueRef);
+var
+  Descriptor: JsValueRef;
+  PropName: UTF8String;
+  PropId: JsPropertyIdRef;
+  B: ByteBool;
+begin
+  Descriptor := JsCreateObject;
+  JsSetProperty(Descriptor, 'configurable', BooleanToJsBoolean(Configurable), True);
+  JsSetProperty(Descriptor, 'enumerable', BooleanToJsBoolean(Enumerable), True);
+  JsSetProperty(Descriptor, 'writable', BooleanToJsBoolean(Writable));
+  JsSetProperty(Descriptor, 'value', Value, True);
+  PropName := UTF8Encode(AName);
+  ChakraCoreCheck(JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId));
+  ChakraCoreCheck(JsDefineProperty(AInstance, PropId, Descriptor, B));
 end;
 
 { TChakraCoreNativeObject public }
 
-constructor TChakraCoreNativeObject.Create(Arguments: PJsValueRef; ArgumentCount: Word);
+constructor TNativeObject.Create(Arguments: PJsValueRef; ArgumentCount: Word);
 begin
   inherited Create;
   FInstance := nil;
-  ChakraCoreCheck(JsCreateExternalObject(Self, NativeClass_FinalizeCallback, FInstance));
-  JsSetExternalData(FInstance, Self);
+  ChakraCoreCheck(JsCreateExternalObject(Self, Native_FinalizeCallback, FInstance));
   ChakraCoreCheck(JsSetPrototype(Instance, Prototype));
+  JsSetExternalData(FInstance, Self);
+  Proxify;
+  Context.DoNativeObjectCreated(Self);
 end;
 
-destructor TChakraCoreNativeObject.Destroy;
+destructor TNativeObject.Destroy;
 begin
+  // TODO detect context already destroyed
   if Assigned(FInstance) then
     JsSetExternalData(FInstance, nil);
   inherited;
 end;
 
-class procedure TChakraCoreNativeObject.Project(const AName: UnicodeString; UseStrictRules: Boolean);
+class procedure TNativeObject.Project(const AName: UnicodeString; UseStrictRules: Boolean);
 var
   ConstructorName: UnicodeString;
   ConstructorFunc: JsValueRef;
@@ -1113,15 +1400,11 @@ begin
   ConstructorName := AName;
   if ConstructorName = '' then
     ConstructorName := UnicodeString(ClassName);
-  ChakraCoreCheck(JsCreateNamedFunction(StringToJsString(ConstructorName), NativeClass_ConstructorCallback, Self, ConstructorFunc));
-  JsSetProperty(TChakraCoreContext.CurrentContext.Global, ConstructorName, ConstructorFunc, UseStrictRules);
-{$ifdef SUPPORTS_CLASS_FIELDS}
-  ChakraCoreCheck(JsCreateObject(Prototype));
-{$else}
-  AddPrototype(Self);
-{$endif}
-  RegisterMethods(Prototype);
-  JsSetProperty(ConstructorFunc, 'prototype', Prototype, UseStrictRules);
+  ChakraCoreCheck(JsCreateNamedFunction(StringToJsString(ConstructorName), Native_ConstructorCallback, Self,
+    ConstructorFunc));
+  JsSetProperty(JsGlobal, ConstructorName, ConstructorFunc, UseStrictRules);
+  RegisterPrototype;
+  ChakraCoreCheck(JsSetPrototype(ConstructorFunc, Prototype));
 end;
 
 {$ifndef SUPPORTS_CLASS_FIELDS}

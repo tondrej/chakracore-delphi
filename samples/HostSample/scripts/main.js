@@ -14,7 +14,7 @@ import('json2').then(
 		f(console);
 		console.log("");
 
-		var console2 = new TConsole();
+		var console2 = new Console();
 		f(console2);
 	}
 ).catch(

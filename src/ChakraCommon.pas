@@ -366,7 +366,7 @@ type
   ///     Property identifiers are used to refer to properties of JavaScript objects instead of using
   ///     strings.
   /// </remarks>
-  JsPropertyIdRef = JsRef;
+  JsPropertyIdRef = type JsRef;
 
   /// <summary>
   ///     Attributes of a runtime.

@@ -44,7 +44,7 @@ uses
 {$ifdef DELPHI}
   TextTestRunner,
 {$endif}
-  Compat, ChakraCoreVersion, Test_ChakraCore;
+  Compat, ChakraCoreVersion, Test_ChakraCore, Test_Classes;
 
 {$R *.res}
 

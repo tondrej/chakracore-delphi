@@ -67,7 +67,7 @@
         <PackageName Value="FCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="3">
       <Unit0>
         <Filename Value="ChakraCoreTests.dpr"/>
         <IsPartOfProject Value="True"/>
@@ -76,6 +76,10 @@
         <Filename Value="Test_ChakraCore.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="Test_Classes.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

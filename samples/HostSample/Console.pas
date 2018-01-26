@@ -46,12 +46,12 @@ type
   private
     FOnPrint: TConsolePrintEvent;
     
-    function Assert(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
-    function Log(Arguments: PJsValueRef; ArgumentCount: Word; Level: TInfoLevel): JsValueRef;
-    function LogError(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
-    function LogInfo(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
-    function LogNone(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
-    function LogWarn(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
+    function Assert(Args: PJsValueRef; ArgCount: Word): JsValueRef;
+    function Log(Args: PJsValueRef; ArgCount: Word; Level: TInfoLevel): JsValueRef;
+    function LogError(Args: PJsValueRef; ArgCount: Word): JsValueRef;
+    function LogInfo(Args: PJsValueRef; ArgCount: Word): JsValueRef;
+    function LogNone(Args: PJsValueRef; ArgCount: Word): JsValueRef;
+    function LogWarn(Args: PJsValueRef; ArgCount: Word): JsValueRef;
   protected
     procedure DoPrint(const Text: UnicodeString; Level: TInfoLevel = ilNone); virtual;
     class procedure RegisterMethods(AInstance: JsValueRef); override;
@@ -92,35 +92,35 @@ end;
 
 { TConsole private }
 
-function TConsole.Assert(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
+function TConsole.Assert(Args: PJsValueRef; ArgCount: Word): JsValueRef;
 var
   ArgCondition: JsValueRef;
   SMessage: UnicodeString;
 begin
   Result := JsUndefinedValue;
-  if ArgumentCount < 1 then
+  if ArgCount < 1 then
     Exit;
 
   SMessage := 'Assertion failed';
 
   // arg 1 = condition (boolean)
-  ArgCondition := Arguments^;
+  ArgCondition := Args^;
   if (JsGetValueType(ArgCondition) <> JsBoolean) then
     raise Exception.Create('condition passed to console.assert not a boolean');
 
-  Inc(Arguments);
-  Dec(ArgumentCount);
+  Inc(Args);
+  Dec(ArgCount);
 
   if (JsBooleanToBoolean(ArgCondition)) then // assertion passed
     Exit;
 
-  if ArgumentCount = 0 then // no message/data
+  if ArgCount = 0 then // no message/data
     DoPrint(SMessage, ilError)
   else
-    Log(Arguments, ArgumentCount, ilError);
+    Log(Args, ArgCount, ilError);
 end;
 
-function TConsole.Log(Arguments: PJsValueRef; ArgumentCount: Word; Level: TInfoLevel): JsValueRef;
+function TConsole.Log(Args: PJsValueRef; ArgCount: Word; Level: TInfoLevel): JsValueRef;
 var
   FirstArg, S, SCopy: UnicodeString;
   P, PPrev: PWideChar;
@@ -128,17 +128,17 @@ var
   I, ArgIndex: Integer;
 begin
   Result := JsUndefinedValue;
-  if not Assigned(Arguments) then
+  if not Assigned(Args) then
     Exit;
 
   S := '';
   P := nil;
   PPrev := nil;
-  Arg := Arguments;
+  Arg := Args;
   ArgIndex := 0;
-  if Assigned(Arguments) and (ArgumentCount > 0) and (JsGetValueType(Arguments^) = JsString) then
+  if Assigned(Args) and (ArgCount > 0) and (JsGetValueType(Args^) = JsString) then
   begin
-    FirstArg := JsStringToUnicodeString(Arguments^);
+    FirstArg := JsStringToUnicodeString(Args^);
     PPrev := PWideChar(FirstArg);
     P := FmtSpecPos(PPrev);
   end;
@@ -149,7 +149,7 @@ begin
     Inc(ArgIndex);
     while Assigned(P) do
     begin
-      if ArgIndex > ArgumentCount - 1 then
+      if ArgIndex > ArgCount - 1 then
       begin
         SetString(SCopy, PPrev, (P - PPrev) + 2);
         S := S + WideStringReplace(SCopy, '%%', '%', [rfReplaceAll]);
@@ -179,7 +179,7 @@ begin
   end
   else
   begin
-    for I := 0 to ArgumentCount - 1 do
+    for I := 0 to ArgCount - 1 do
     begin
       S := S + JsStringToUnicodeString(Arg^);
       Inc(Arg);
@@ -188,24 +188,24 @@ begin
   DoPrint(S, Level);
 end;
 
-function TConsole.LogError(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
+function TConsole.LogError(Args: PJsValueRef; ArgCount: Word): JsValueRef;
 begin
-  Result := Log(Arguments, ArgumentCount, ilError);
+  Result := Log(Args, ArgCount, ilError);
 end;
 
-function TConsole.LogInfo(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
+function TConsole.LogInfo(Args: PJsValueRef; ArgCount: Word): JsValueRef;
 begin
-  Result := Log(Arguments, ArgumentCount, ilInfo);
+  Result := Log(Args, ArgCount, ilInfo);
 end;
 
-function TConsole.LogNone(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
+function TConsole.LogNone(Args: PJsValueRef; ArgCount: Word): JsValueRef;
 begin
-  Result := Log(Arguments, ArgumentCount, ilNone);
+  Result := Log(Args, ArgCount, ilNone);
 end;
 
-function TConsole.LogWarn(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef;
+function TConsole.LogWarn(Args: PJsValueRef; ArgCount: Word): JsValueRef;
 begin
-  Result := Log(Arguments, ArgumentCount, ilWarn);
+  Result := Log(Args, ArgCount, ilWarn);
 end;
 
 { TConsole protected }

@@ -256,7 +256,7 @@ type
 
   TNativeMethod = function(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef of object;
   TNativeGetAccessorMethod = function: JsValueRef of object;
-  TNativeSetAccessorMethod = procedure(Value: PJsValueRef) of object;
+  TNativeSetAccessorMethod = procedure(Value: JsValueRef) of object;
 
   { TNativeObject }
 
@@ -506,8 +506,8 @@ begin
   end;
 end;
 
-function Native_MethodCallback(Callee: JsValueRef; IsConstructCall: bool; Arguments: PJsValueRef;
-  ArgumentCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+function Native_MethodCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRef;
+  ArgCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 var
   NativeMethod: TNativeMethod;
 begin
@@ -516,22 +516,22 @@ begin
     if IsConstructCall then
       raise Exception.Create('Method called as a constructor');
 
-    if not Assigned(Arguments) or (ArgumentCount = 0) then
+    if not Assigned(Args) or (ArgCount = 0) then
       raise Exception.Create('Invalid arguments');
 
-    if (JsGetValueType(Arguments^) <> JsObject) then
+    if (JsGetValueType(Args^) <> JsObject) then
       raise Exception.Create('thisarg not an object');
 
     TMethod(NativeMethod).Code := CallbackState;
-    TMethod(NativeMethod).Data := JsGetExternalData(Arguments^);
+    TMethod(NativeMethod).Data := JsGetExternalData(Args^);
 
-    if Arguments^ <> TNativeObject(TMethod(NativeMethod).Data).Instance then
+    if Args^ <> TNativeObject(TMethod(NativeMethod).Data).Instance then
       raise Exception.Create('thisarg not the registered instance');
 
-    Inc(Arguments);
-    Dec(ArgumentCount);
+    Inc(Args);
+    Dec(ArgCount);
 
-    Result := NativeMethod(Arguments, ArgumentCount);
+    Result := NativeMethod(Args, ArgCount);
   except
     on E: Exception do
       JsThrowError(WideFormat('[%s] %s', [E.ClassName, E.Message]));
@@ -554,7 +554,7 @@ begin
     TMethod(NativeMethod).Code := CallbackState;
     TMethod(NativeMethod).Data := JsGetExternalData(Args^);
 
-    if Args^ <> TNativeObject(TMethod(NativeMethod).Data).Instance then
+    if Args^ <> TNativeObject(TMethod(NativeMethod).Data).TargetInstance then
       raise Exception.Create('thisarg not the registered instance');
 
     Result := NativeMethod;
@@ -580,10 +580,10 @@ begin
     TMethod(NativeMethod).Code := CallbackState;
     TMethod(NativeMethod).Data := JsGetExternalData(Args^[0]);
 
-    if Args^[0] <> TNativeObject(TMethod(NativeMethod).Data).Instance then
+    if Args^[0] <> TNativeObject(TMethod(NativeMethod).Data).TargetInstance then
       raise Exception.Create('thisarg not the registered instance');
 
-    NativeMethod(@Args^[1]);
+    NativeMethod(Args^[1]);
   except
     on E: Exception do
       JsThrowError(WideFormat('[%s] %s', [E.ClassName, E.Message]));
@@ -1323,9 +1323,9 @@ begin
   JsSetProperty(Descriptor, 'configurable', BooleanToJsBoolean(Configurable), True);
   JsSetProperty(Descriptor, 'enumerable', BooleanToJsBoolean(Enumerable), True);
   if Assigned(GetAccessor) then
-    JsSetCallback(Descriptor, 'get', Native_PropGetCallback, @GetAccessor, True);
+    JsSetCallback(Descriptor, 'get', Native_PropGetCallback, GetAccessor, True);
   if Assigned(SetAccessor) then
-    JsSetCallback(Descriptor, 'set', @Native_PropSetCallback, @SetAccessor, True);
+    JsSetCallback(Descriptor, 'set', @Native_PropSetCallback, SetAccessor, True);
   PropName := UTF8Encode(AName);
   ChakraCoreCheck(JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId));
   ChakraCoreCheck(JsDefineProperty(AInstance, PropId, Descriptor, B));

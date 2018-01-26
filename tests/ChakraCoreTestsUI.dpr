@@ -40,7 +40,7 @@ uses
 {$ifdef DELPHI}
   TestFramework, GUITestRunner,
 {$endif}
-  Compat, Test_ChakraCore, ChakraCoreVersion;
+  Compat, Test_ChakraCore, Test_Classes, ChakraCoreVersion;
 
 {$R *.res}
 

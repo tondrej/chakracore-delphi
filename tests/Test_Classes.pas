@@ -40,19 +40,17 @@ uses
 {$else}
   TestFramework,
 {$endif}
-  Compat, ChakraCoreVersion, ChakraCommon, ChakraCore, ChakraCoreUtils, ChakraCoreClasses;
+  Compat, ChakraCoreVersion, ChakraCommon, ChakraCore, ChakraCoreUtils, ChakraCoreClasses,
+  Test_ChakraCore;
 
 type
-  TBaseTestCase = class(TTestCase)
-  private
-  end;
-
   TChakraCoreContextTestCase = class(TBaseTestCase)
   end;
 
   TNativeClassTestCase = class(TBaseTestCase)
   published
-    procedure TestMethod1;
+    procedure TestMethod1AsScript;
+    procedure TestMethod1AsFunction;
     procedure TestNamedProperty;
   end;
 
@@ -94,7 +92,7 @@ end;
 
 function TTestObject1.Method1(Args: PJsValueRef; ArgCount: Word): JsValueRef;
 begin
-  Result := JsUndefinedValue;
+  Result := StringToJsString('Hello');
   FMethod1Called := True;
 end;
 
@@ -110,11 +108,12 @@ end;
 
 { TNativeClassTestCase }
 
-procedure TNativeClassTestCase.TestMethod1;
+procedure TNativeClassTestCase.TestMethod1AsScript;
 var
   Runtime: TChakraCoreRuntime;
   Context: TChakraCoreContext;
   TestObject: TTestObject1;
+  Result: JsValueRef;
 begin
   Runtime := nil;
   Context := nil;
@@ -126,8 +125,38 @@ begin
     TTestObject1.Project('Object1');
     TestObject := TTestObject1.Create;
     JsSetProperty(Context.Global, 'obj', TestObject.Instance);
-    Context.RunScript('obj.method1(null, null);', 'TestMethod1.js');
+    Result := Context.RunScript('obj.method1(null, null);', 'TestMethod1.js');
     Check(TestObject.FMethod1Called, 'method1 called');
+    CheckValueType(JsString, Result, 'method1 result type');
+    CheckEquals('Hello', JsStringToUnicodeString(Result), 'method1 result');
+  finally
+    TestObject.Free;
+    Context.Free;
+    Runtime.Free;
+  end;
+end;
+
+procedure TNativeClassTestCase.TestMethod1AsFunction;
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+  TestObject: TTestObject1;
+  Result: JsValueRef;
+begin
+  Runtime := nil;
+  Context := nil;
+  TestObject := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([]);
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    TTestObject1.Project('Object1');
+    TestObject := TTestObject1.Create;
+    JsSetProperty(Context.Global, 'obj', TestObject.Instance);
+    Result := Context.CallFunction('method1', [], TestObject.Instance);
+    Check(TestObject.FMethod1Called, 'method1 called');
+    CheckValueType(JsString, Result, 'method1 result type');
+    CheckEquals('Hello', JsStringToUnicodeString(Result), 'method1 result');
   finally
     TestObject.Free;
     Context.Free;

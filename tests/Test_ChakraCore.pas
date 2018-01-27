@@ -43,13 +43,7 @@ uses
   Compat, ChakraCoreVersion, ChakraCommon, ChakraCore, ChakraCoreUtils;
 
 type
-  TChakraCoreTestCase = class(TTestCase)
-  private
-    FContext: JsContextRef;
-    FRuntime: JsRuntimeHandle;
-  protected
-    procedure SetUp; override;
-    procedure TearDown; override;
+  TBaseTestCase = class(TTestCase)
   public
 {$ifdef DELPHI}
     // work around Delphi 2007 and earlier compiler error "Ambiguous overloaded call to 'CheckEquals'"
@@ -60,6 +54,15 @@ type
     procedure CheckEquals(expected, actual: JsValueType; const msg: string = ''); overload;
     procedure CheckEquals(expected, actual: JsTypedArrayType; const msg: string = ''); overload;
     procedure CheckValueType(expected: JsValueType; value: JsValueRef; const msg: string = '');
+  end;
+
+  TChakraCoreTestCase = class(TBaseTestCase)
+  private
+    FContext: JsContextRef;
+    FRuntime: JsRuntimeHandle;
+  protected
+    procedure SetUp; override;
+    procedure TearDown; override;
   end;
 
   TChakraCoreUtilsScripting = class(TChakraCoreTestCase)
@@ -98,6 +101,35 @@ implementation
 uses
   Math;
 
+{$ifdef DELPHI}
+procedure TBaseTestCase.CheckEquals(expected, actual: Integer; msg: string);
+begin
+  inherited CheckEquals(expected, actual, msg);
+end;
+
+procedure TBaseTestCase.CheckEquals(expected, actual: extended; msg: string);
+const
+  DefaultDelta = 0.0000001;
+begin
+  inherited CheckEquals(expected, actual, DefaultDelta, msg);
+end;
+{$endif}
+
+procedure TBaseTestCase.CheckEquals(expected, actual: JsValueType; const msg: string);
+begin
+  inherited CheckEquals(Ord(expected), Ord(actual), msg);
+end;
+
+procedure TBaseTestCase.CheckEquals(expected, actual: JsTypedArrayType; const msg: string);
+begin
+  inherited CheckEquals(Ord(expected), Ord(actual), msg);
+end;
+
+procedure TBaseTestCase.CheckValueType(expected: JsValueType; value: JsValueRef; const msg: string);
+begin
+  CheckEquals(expected, JsGetValueType(Value), msg);
+end;
+
 procedure TChakraCoreTestCase.SetUp;
 begin
   FRuntime := nil;
@@ -113,35 +145,6 @@ begin
   ChakraCoreCheck(JsSetCurrentContext(JS_INVALID_REFERENCE));
   if Assigned(FRuntime) then
     ChakraCoreCheck(JsDisposeRuntime(FRuntime));
-end;
-
-{$ifdef DELPHI}
-procedure TChakraCoreTestCase.CheckEquals(expected, actual: Integer; msg: string);
-begin
-  inherited CheckEquals(expected, actual, msg);
-end;
-
-procedure TChakraCoreTestCase.CheckEquals(expected, actual: extended; msg: string);
-const
-  DefaultDelta = 0.0000001;
-begin
-  inherited CheckEquals(expected, actual, DefaultDelta, msg);
-end;
-{$endif}
-
-procedure TChakraCoreTestCase.CheckEquals(expected, actual: JsValueType; const msg: string);
-begin
-  inherited CheckEquals(Ord(expected), Ord(actual), msg);
-end;
-
-procedure TChakraCoreTestCase.CheckEquals(expected, actual: JsTypedArrayType; const msg: string);
-begin
-  inherited CheckEquals(Ord(expected), Ord(actual), msg);
-end;
-
-procedure TChakraCoreTestCase.CheckValueType(expected: JsValueType; value: JsValueRef; const msg: string);
-begin
-  CheckEquals(expected, JsGetValueType(Value), msg);
 end;
 
 procedure TChakraCoreUtilsScripting.TestVersion;

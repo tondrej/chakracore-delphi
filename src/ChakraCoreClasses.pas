@@ -216,6 +216,7 @@ type
     procedure AddModule(const AName: UnicodeString); overload;
     function CallFunction(const AName: UTF8String; const Args: array of JsValueRef;
       Instance: JsValueRef = nil): JsValueRef;
+    function CallNew(const AConstructorName: UTF8String; const Args: array of JsValueRef): JsValueRef;
     class function CurrentContext: TChakraCoreContext;
     function FindModule(const AName: UnicodeString): TChakraModule; overload;
     function FindModule(AHandle: JsModuleRecord): TChakraModule; overload;
@@ -254,7 +255,7 @@ type
 
   TNativeClass = class of TNativeObject;
 
-  TNativeMethod = function(Arguments: PJsValueRef; ArgumentCount: Word): JsValueRef of object;
+  TNativeMethod = function(Args: PJsValueRef; ArgCount: Word): JsValueRef of object;
   TNativeGetAccessorMethod = function: JsValueRef of object;
   TNativeSetAccessorMethod = procedure(Value: JsValueRef) of object;
 
@@ -286,7 +287,7 @@ type
     class procedure RegisterNamedProperty(AInstance: JsValueRef; const AName: UnicodeString;
       Configurable, Enumerable, Writable: Boolean; Value: JsValueRef); overload; virtual;
   public
-    constructor Create(Arguments: PJsValueRef = nil; ArgumentCount: Word = 0); virtual;
+    constructor Create(Args: PJsValueRef = nil; ArgCount: Word = 0; AFinalize: Boolean = False); virtual;
     destructor Destroy; override;
 
     class procedure Project(const AName: UnicodeString = ''; UseStrictRules: Boolean = True);
@@ -485,8 +486,13 @@ begin
   Result := BooleanToJsBoolean(JsHasProperty(Args^[phaTarget], Args^[phaProp]));
 end;
 
-function Native_ConstructorCallback(Callee: JsValueRef; IsConstructCall: bool; Arguments: PJsValueRef;
-  ArgumentCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+procedure Native_FinalizeCallback(data: Pointer); {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+begin
+  TObject(data).Free;
+end;
+
+function Native_ConstructorCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRef; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 var
   NativeClass: TNativeClass absolute CallbackState;
   NativeInstance: TNativeObject;
@@ -496,10 +502,10 @@ begin
     if not IsConstructCall then
       raise Exception.Create('Constructor called as a method');
 
-    Inc(Arguments);
-    Dec(ArgumentCount);
+    Inc(Args);
+    Dec(ArgCount);
 
-    NativeInstance := NativeClass.Create(Arguments, ArgumentCount);
+    NativeInstance := NativeClass.Create(Args, ArgCount, True);
     Result := NativeInstance.Instance;
   except on E: Exception do
     JsThrowError(WideFormat('[%s] %s', [E.ClassName, E.Message]));
@@ -588,11 +594,6 @@ begin
     on E: Exception do
       JsThrowError(WideFormat('[%s] %s', [E.ClassName, E.Message]));
   end;
-end;
-
-procedure Native_FinalizeCallback(data: Pointer); {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
-begin
-  TObject(data).Free;
 end;
 
 function NotifyModuleReadyCallback(referencingModule: JsModuleRecord; exceptionVar: JsValueRef): JsErrorCode;
@@ -1166,6 +1167,12 @@ begin
   ProcessMessages;
 end;
 
+function TChakraCoreContext.CallNew(const AConstructorName: UTF8String; const Args: array of JsValueRef): JsValueRef;
+begin
+  Result := JsNew(UTF8Decode(AConstructorName), Args);
+  ProcessMessages;
+end;
+
 class function TChakraCoreContext.CurrentContext: TChakraCoreContext;
 var
   CurrentContext: JsContextRef;
@@ -1351,13 +1358,24 @@ end;
 
 { TChakraCoreNativeObject public }
 
-constructor TNativeObject.Create(Arguments: PJsValueRef; ArgumentCount: Word);
+constructor TNativeObject.Create(Args: PJsValueRef; ArgCount: Word; AFinalize: Boolean);
+const
+  Finalizers: array[Boolean] of JsFinalizeCallback = (nil, Native_FinalizeCallback);
+var
+  APrototype: JsValueRef;
 begin
   inherited Create;
   FInstance := nil;
-  ChakraCoreCheck(JsCreateExternalObject(Self, Native_FinalizeCallback, FInstance));
-  ChakraCoreCheck(JsSetPrototype(Instance, Prototype));
+  ChakraCoreCheck(JsCreateExternalObject(Self, Finalizers[AFinalize], FInstance));
   JsSetExternalData(FInstance, Self);
+  APrototype := Prototype;
+  if Assigned(APrototype) then
+    ChakraCoreCheck(JsSetPrototype(FInstance, Prototype))
+  else
+  begin
+    RegisterMethods(FInstance);
+    RegisterProperties(FInstance);
+  end;
   Proxify;
   Context.DoNativeObjectCreated(Self);
 end;
@@ -1366,7 +1384,7 @@ destructor TNativeObject.Destroy;
 begin
   // TODO detect context already destroyed
   if Assigned(FInstance) then
-    JsSetExternalData(FInstance, nil);
+    ChakraCommon.JsSetExternalData(FInstance, nil);
   inherited;
 end;
 

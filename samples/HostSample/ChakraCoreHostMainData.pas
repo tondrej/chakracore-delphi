@@ -174,7 +174,6 @@ end;
 procedure TDataModuleMain.DataModuleDestroy(Sender: TObject);
 begin
   FreeAndNil(FConsole);
-  FConsole := nil;
   FreeAndNil(FContext);
   FreeAndNil(FRuntime);
 end;

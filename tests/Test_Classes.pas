@@ -122,7 +122,6 @@ begin
     Runtime := TChakraCoreRuntime.Create([]);
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
-    TTestObject1.Project('Object1');
     TestObject := TTestObject1.Create;
     JsSetProperty(Context.Global, 'obj', TestObject.Instance);
     Result := Context.RunScript('obj.method1(null, null);', 'TestMethod1.js');
@@ -150,7 +149,6 @@ begin
     Runtime := TChakraCoreRuntime.Create([]);
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
-    TTestObject1.Project('Object1');
     TestObject := TTestObject1.Create;
     JsSetProperty(Context.Global, 'obj', TestObject.Instance);
     Result := Context.CallFunction('method1', [], TestObject.Instance);
@@ -179,7 +177,6 @@ begin
     Runtime := TChakraCoreRuntime.Create([]);
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
-    TTestObject1.Project('Object1');
     TestObject := TTestObject1.Create;
     JsSetProperty(Context.Global, 'obj', TestObject.Instance);
     Context.RunScript(WideFormat('obj.prop1 = ''%s'';', [SValue]), 'TestNamedProperty.js');

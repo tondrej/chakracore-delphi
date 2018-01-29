@@ -94,6 +94,7 @@ type
     procedure TestCallFunction01;
     procedure TestCallFunction02;
     procedure TestCallFunctions;
+    procedure TestCallNew;
   end;
 
 implementation
@@ -696,7 +697,7 @@ const
 type
   PErrorType = ^TErrorType;
 
-function TestErrorCallback(Callee: JsValueRef; IsConstructCall: bool; Arguments: PJsValueRef; ArgumentCount: Word;
+function TestErrorCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRef; ArgCount: Word;
   CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 var
   ErrorType: PErrorType absolute CallbackState;
@@ -826,6 +827,26 @@ begin
 
     CheckValueType(JsNumber, Result, 'result type');
     CheckEquals(120, JsNumberToInt(Result), 'result value');
+  end;
+end;
+
+procedure TChakraCoreUtilsScripting.TestCallNew;
+const
+  SScript = 'this.result = new Object()';
+  SName = 'TestCallNew.js';
+var
+  Unicode: Boolean;
+  Result: JsValueRef;
+begin
+  for Unicode := False to True do
+  begin
+    if Unicode then
+      Result := JsRunScript(UnicodeString(SScript), UnicodeString(SName))
+    else
+      Result := JsRunScript(UTF8String(SScript), UTF8String(SName));
+
+    CheckValueType(JsObject, Result, 'result type');
+    Check(JsInstanceOf(Result, 'Object'), 'instanceof Object');
   end;
 end;
 

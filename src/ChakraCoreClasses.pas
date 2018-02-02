@@ -31,7 +31,9 @@ unit ChakraCoreClasses;
 interface
 
 uses
-{$ifndef SUPPORTS_CLASS_FIELDS}
+{$ifdef FPC}
+  Types,
+{$else}
   Windows,
 {$endif}
   Classes, SysUtils, Contnrs,
@@ -266,17 +268,11 @@ type
     FInstance: JsValueRef;
     FTargetInstance: JsValueRef;
 
-{$ifdef SUPPORTS_CLASS_FIELDS}
-    class var Prototype: JsValueRef;
-{$endif}
-
     function GetContext: TChakraCoreContext;
     function GetContextHandle: JsContextRef;
     procedure Proxify;
   protected
-{$ifndef SUPPORTS_CLASS_FIELDS}
     class function Prototype: JsValueRef;
-{$endif}
     class procedure RegisterPrototype; virtual;
     class procedure RegisterMethod(AInstance: JsValueRef; const AName: UnicodeString; AMethod: Pointer;
       UseStrictRules: Boolean = True); virtual;
@@ -287,7 +283,7 @@ type
     class procedure RegisterNamedProperty(AInstance: JsValueRef; const AName: UnicodeString;
       Configurable, Enumerable, Writable: Boolean; Value: JsValueRef); overload; virtual;
   public
-    constructor Create(Args: PJsValueRef = nil; ArgCount: Word = 0; AFinalize: Boolean = False); virtual;
+    constructor Create(Args: PJsValueRefArray = nil; ArgCount: Word = 0; AFinalize: Boolean = False); virtual;
     destructor Destroy; override;
 
     class procedure Project(const AName: UnicodeString = ''; UseStrictRules: Boolean = True);
@@ -300,7 +296,6 @@ type
 
 implementation
 
-{$ifndef SUPPORTS_CLASS_FIELDS}
 type
   PProjectedClassInfo = ^TProjectedClassInfo;
   TProjectedClassInfo = record
@@ -352,7 +347,7 @@ end;
 
 procedure InitializeProjectedClasses;
 begin
-  InitializeCriticalSection(Lock);
+  InitCriticalSection(Lock);
 
   EnterCriticalSection(Lock);
   try
@@ -373,11 +368,9 @@ begin
     FreeAndNil(ProjectedClasses);
   finally
     LeaveCriticalSection(Lock);
-    DeleteCriticalSection(Lock);
+    DoneCriticalsection(Lock);
   end;
 end;
-
-{$endif}
 
 procedure BeforeCollectCallback(callbackState: Pointer); {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 begin
@@ -505,7 +498,7 @@ begin
     Inc(Args);
     Dec(ArgCount);
 
-    NativeInstance := NativeClass.Create(Args, ArgCount, True);
+    NativeInstance := NativeClass.Create(Pointer(Args), ArgCount, True);
     Result := NativeInstance.Instance;
   except on E: Exception do
     JsThrowError(WideFormat('[%s] %s', [E.ClassName, E.Message]));
@@ -1284,23 +1277,17 @@ end;
 
 class procedure TNativeObject.RegisterPrototype;
 begin
-  {$ifdef SUPPORTS_CLASS_FIELDS}
-    Prototype := JsCreateObject;
-  {$else}
-    AddPrototype(Self);
-  {$endif}
+  AddPrototype(Self);
   RegisterMethods(Prototype);
   RegisterProperties(Prototype);
 end;
 
 { TChakraCoreNativeObject protected }
 
-{$ifndef SUPPORTS_CLASS_FIELDS}
 class function TNativeObject.Prototype: JsValueRef;
 begin
   Result := FindPrototype(Self);
 end;
-{$endif}
 
 class procedure TNativeObject.RegisterMethod(AInstance: JsValueRef; const AName: UnicodeString;
   AMethod: Pointer; UseStrictRules: Boolean);
@@ -1358,7 +1345,7 @@ end;
 
 { TChakraCoreNativeObject public }
 
-constructor TNativeObject.Create(Args: PJsValueRef; ArgCount: Word; AFinalize: Boolean);
+constructor TNativeObject.Create(Args: PJsValueRefArray; ArgCount: Word; AFinalize: Boolean);
 const
   Finalizers: array[Boolean] of JsFinalizeCallback = (nil, Native_FinalizeCallback);
 var
@@ -1403,12 +1390,10 @@ begin
   ChakraCoreCheck(JsSetPrototype(ConstructorFunc, Prototype));
 end;
 
-{$ifndef SUPPORTS_CLASS_FIELDS}
 initialization
   InitializeProjectedClasses;
 
 finalization
   FinalizeProjectedClasses;
-{$endif}
 
 end.

@@ -35,6 +35,9 @@ interface
 {$endif}
 
 uses
+{$ifdef DELPHI}
+  Windows,
+{$endif}
   SysUtils;
 
 {$ifndef HAS_NATIVEUINT}
@@ -80,6 +83,9 @@ var
 // initialize to US format settings (use point as decimal separator for float values)
 var
   DefaultFormatSettings: TFormatSettings;
+
+procedure InitCriticalSection(var Lock: TRTLCriticalSection);
+procedure DoneCriticalSection(var Lock: TRTLCriticalSection);
 
 {$ifndef HAS_WIDESTRUTILS}
 function WideStringReplace(const S, OldPattern, NewPattern: Widestring; Flags: TReplaceFlags): Widestring;
@@ -135,6 +141,16 @@ end;
 {$endif}
 
 {$ifdef DELPHI}
+
+procedure InitCriticalSection(var Lock: TRTLCriticalSection);
+begin
+  InitializeCriticalSection(Lock);
+end;
+
+procedure DoneCriticalSection(var Lock: TRTLCriticalSection);
+begin
+  Windows.DeleteCriticalSection(Lock);
+end;
 
 {$ifndef HAS_WIDESTRUTILS}
 function WideStringReplace(const S, OldPattern, NewPattern: Widestring; Flags: TReplaceFlags): Widestring;

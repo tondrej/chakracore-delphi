@@ -102,10 +102,12 @@ const
   BackgroundMask = $F0;
   TextColors: array[TInfoLevel] of Word = (0, FOREGROUND_GREEN or FOREGROUND_INTENSITY,
     FOREGROUND_GREEN or FOREGROUND_RED or FOREGROUND_INTENSITY, FOREGROUND_RED or FOREGROUND_INTENSITY);
-var
-  Info: TConsoleScreenBufferInfo;
-  S: UTF8String;
 {$endif}
+var
+{$ifdef WINDOWS}
+  Info: TConsoleScreenBufferInfo;
+{$endif}
+  S: UTF8String;
 begin
   S := UTF8Encode(Text);
 {$ifdef WINDOWS}

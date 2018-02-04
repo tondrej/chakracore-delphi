@@ -31,11 +31,9 @@ interface
 {$include common.inc}
 
 uses
-{$ifdef LINUX}
-{$ifdef FPC}
+{$ifdef FPC}{$ifdef UNIX}
   cwstring,
-{$endif}
-{$endif}
+{$endif}{$endif}
 {$ifdef WINDOWS}
   Windows,
 {$endif}

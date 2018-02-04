@@ -31,6 +31,9 @@ program ChakraCoreHostSample;
 {$include common.inc}
 
 uses
+  {$ifdef FPC}{$ifdef UNIX}
+  cthreads,
+  {$endif}{$endif}
   SysUtils,
   Compat,
   ChakraCoreVersion, ChakraCoreUtils,

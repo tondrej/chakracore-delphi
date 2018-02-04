@@ -60,6 +60,7 @@ type
 
   PJsValueRefArray = ^TJsValueRefArray;
   TJsValueRefArray = array[0..255] of JsValueRef;
+  JsValueRefArray = array of JsValueRef;
 
 procedure ChakraCoreCheck(ErrorCode: JsErrorCode);
 procedure RaiseChakraCoreError(ErrorCode: JsErrorCode);
@@ -109,6 +110,7 @@ function JsGetExternalData(Value: JsValueRef): Pointer;
 procedure JsSetExternalData(Value: JsValueRef; Data: Pointer);
 function JsGetValueType(Value: JsValueRef): JsValueType;
 function JsGetTypedArrayType(Value: JsValueRef): JsTypedArrayType;
+function JsCallFunction(Func: JsValueRef; Args: PJsValueRef; ArgCount: Word): JsValueRef; overload;
 function JsCallFunction(Func: JsValueRef; const Args: array of JsValueRef): JsValueRef; overload;
 function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef; Instance: JsValueRef = nil): JsValueRef; overload;
 function JsCallFunction(const FunctionName: UnicodeString; const Args: array of JsValueRef; Instance: JsValueRef = nil): JsValueRef; overload;
@@ -125,6 +127,11 @@ function JsHasProperty(Value: JsValueRef; const PropName: UTF8String): Boolean; 
 function JsHasProperty(Value: JsValueRef; const PropName: UnicodeString): Boolean; overload;
 function JsRunScript(const Script, Name: UTF8String; SourceContext: NativeUInt = 0): JsValueRef; overload;
 function JsRunScript(const Script, Name: UnicodeString; SourceContext: NativeUInt = 0): JsValueRef; overload;
+function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UTF8String = '';
+  UseStrictRules: Boolean = True): JsValueRef; overload;
+function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UnicodeString = '';
+  UseStrictRules: Boolean = True): JsValueRef; overload;
+procedure JsCreatePromise(out Promise, ResolveFunc, RejectFunc: JsValueRef);
 function JsSetCallback(Instance: JsValueRef; const CallbackName: UTF8String; Callback: JsNativeFunction;
   CallbackState: Pointer; UseStrictRules: Boolean = True): JsValueRef; overload;
 function JsSetCallback(Instance: JsValueRef; const CallbackName: UnicodeString; Callback: JsNativeFunction;
@@ -738,6 +745,11 @@ begin
   ChakraCoreCheck(JsGetTypedArrayInfo(Value, @Result, nil, nil, nil));
 end;
 
+function JsCallFunction(Func: JsValueRef; Args: PJsValueRef; ArgCount: Word): JsValueRef;
+begin
+  ChakraCoreCheck(ChakraCommon.JsCallFunction(Func, Args, ArgCount, @Result));
+end;
+
 function JsCallFunction(Func: JsValueRef; const Args: array of JsValueRef): JsValueRef;
 var
   PArg: PJsValueRef;
@@ -747,7 +759,7 @@ begin
   Len := Length(Args);
   if Len > 0 then
     PArg := @Args[0];
-  ChakraCoreCheck(ChakraCommon.JsCallFunction(Func, PArg, Len, @Result));
+  Result := JsCallFunction(Func, PArg, Len);
 end;
 
 function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef; Instance: JsValueRef): JsValueRef;
@@ -891,10 +903,33 @@ begin
   ChakraCoreCheck(JsRun(ScriptSource, SourceContext, ScriptName, JsParseScriptAttributeArrayBufferIsUtf16Encoded, Result));
 end;
 
+function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UTF8String;
+  UseStrictRules: Boolean): JsValueRef;
+begin
+  if Name = '' then
+    ChakraCoreCheck(ChakraCommon.JsCreateFunction(Callback, CallbackState, Result))
+  else
+    ChakraCoreCheck(ChakraCommon.JsCreateNamedFunction(StringToJsString(Name), Callback, CallbackState, Result));
+end;
+
+function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UnicodeString;
+  UseStrictRules: Boolean): JsValueRef;
+begin
+  if Name = '' then
+    ChakraCoreCheck(ChakraCommon.JsCreateFunction(Callback, CallbackState, Result))
+  else
+    ChakraCoreCheck(ChakraCommon.JsCreateNamedFunction(StringToJsString(Name), Callback, CallbackState, Result));
+end;
+
+procedure JsCreatePromise(out Promise, ResolveFunc, RejectFunc: JsValueRef);
+begin
+  ChakraCoreCheck(ChakraCore.JsCreatePromise(Promise, ResolveFunc, RejectFunc));
+end;
+
 function JsSetCallback(Instance: JsValueRef; const CallbackName: UTF8String; Callback: JsNativeFunction;
   CallbackState: Pointer; UseStrictRules: Boolean): JsValueRef;
 begin
-  ChakraCoreCheck(JsCreateNamedFunction(StringToJsString(CallbackName), Callback, CallbackState, Result));
+  Result := JsCreateFunction(Callback, CallbackState, CallbackName, UseStrictRules);
   JsSetProperty(Instance, CallbackName, Result, UseStrictRules);
 end;
 

@@ -110,30 +110,61 @@ type
   private
     FContext: TChakraCoreContext;
   protected
-    function Process: JsValueRef; virtual; abstract;
+    function Process(out ResultValue: JsValueRef): Boolean; virtual; abstract;
   public
     constructor Create(AContext: TChakraCoreContext); virtual;
 
     property Context: TChakraCoreContext read FContext;
   end;
 
-  TCallbackMessage = class(TBaseMessage)
+  TTaskMessage = class(TBaseMessage)
   private
+    FArgCount: Integer;
+    FArgs: PJsValueRefArray;
+    FDelay: Cardinal;
+    FRepeatCount: Integer;
     FTask: JsValueRef;
+    FTime: Cardinal;
   protected
-    function Process: JsValueRef; override;
+    function Process(out ResultValue: JsValueRef): Boolean; override;
   public
-    constructor Create(AContext: TChakraCoreContext; ATask: JsValueRef); reintroduce; virtual;
+    constructor Create(AContext: TChakraCoreContext; Task, ThisArg: JsValueRef; const Args: array of JsValueRef;
+      ADelay: Cardinal = 0; ARepeatCount: Integer = 1); reintroduce; virtual;
     destructor Destroy; override;
 
+    property Delay: Cardinal read FDelay;
+    property RepeatCount: Integer read FRepeatCount;
     property Task: JsValueRef read FTask;
+    property Time: Cardinal read FTime;
+  end;
+
+  TPromiseStatus = (psPending, psResolved, psRejected);
+
+  TPromiseMessage = class(TBaseMessage)
+  private
+    FArgs: array[0..1] of JsValueRef;
+    FPromise: JsValueRef;
+    FRejectTask: JsValueRef;
+    FResolveTask: JsValueRef;
+    FStatus: TPromiseStatus;
+  protected
+    function Process(out ResultValue: JsHandle): Boolean; override;
+    procedure SetStatus(Value: TPromiseStatus; StatusValue: JsValueRef);
+  public
+    constructor Create(AContext: TChakraCoreContext; ThisArg, ResolveTask, RejectTask: JsValueRef); reintroduce; virtual;
+    destructor Destroy; override;
+
+    property Promise: JsValueRef read FPromise;
+    property RejectTask: JsValueRef read FRejectTask;
+    property ResolveTask: JsValueRef read FResolveTask;
+    property Status: TPromiseStatus read FStatus;
   end;
 
   TModuleMessage = class(TBaseMessage)
   private
     FModule: TChakraModule;
   protected
-    function Process: JsValueRef; override;
+    function Process(out ResultValue: JsValueRef): Boolean; override;
   public
     constructor Create(AContext: TChakraCoreContext; AModule: TChakraModule); reintroduce; virtual;
 
@@ -207,7 +238,6 @@ type
     function HandleNotifyModuleReadyCallback(referencingModule: JsModuleRecord; exceptionVar: JsValueRef): JsErrorCode;
       virtual;
     function ModuleNeeded(const AName: UnicodeString; ARefModule: JsModuleRecord = nil): TChakraModule;
-
     procedure ProcessMessages;
   public
     constructor Create(ARuntime: TChakraCoreRuntime);
@@ -216,12 +246,17 @@ type
     procedure Activate;
     procedure AddModule(const AName: UTF8String); overload;
     procedure AddModule(const AName: UnicodeString); overload;
+    function CallFunction(Func: JsValueRef; Args: PJsValueRef; ArgCount: Word): JsValueRef; overload;
     function CallFunction(const AName: UTF8String; const Args: array of JsValueRef;
-      Instance: JsValueRef = nil): JsValueRef;
-    function CallNew(const AConstructorName: UTF8String; const Args: array of JsValueRef): JsValueRef;
+      Instance: JsValueRef = nil): JsValueRef; overload;
+    function CallFunction(const AName: UnicodeString; const Args: array of JsValueRef;
+      Instance: JsValueRef = nil): JsValueRef; overload;
+    function CallNew(const AConstructorName: UTF8String; const Args: array of JsValueRef): JsValueRef; overload;
+    function CallNew(const AConstructorName: UnicodeString; const Args: array of JsValueRef): JsValueRef; overload;
     class function CurrentContext: TChakraCoreContext;
     function FindModule(const AName: UnicodeString): TChakraModule; overload;
     function FindModule(AHandle: JsModuleRecord): TChakraModule; overload;
+    procedure PostMessage(AMessage: TBaseMessage);
     function RunScript(const Script, AName: UTF8String): JsValueRef; overload;
     function RunScript(const Script, AName: UnicodeString): JsValueRef; overload;
 
@@ -824,39 +859,138 @@ end;
 
 { TCallbackMessage protected }
 
-function TCallbackMessage.Process: JsValueRef;
+function TTaskMessage.Process(out ResultValue: JsValueRef): Boolean;
 var
-  Global: JsValueRef;
+  Ticks: Cardinal;
 begin
-  Global := Context.Global;
-  Result := JsCallFunction(Task, Global);
-  ChakraCoreCheck(JsRelease(Task, nil));
-  FTask := nil;
+  ResultValue := JsUndefinedValue;
+  Ticks := GetTickCount;
+  Result := Ticks >= FTime + FDelay;
+  if Result then
+  begin
+    ResultValue := JsCallFunction(FTask, @FArgs^[0], FArgCount + 1);
+
+    if FRepeatCount > 0 then
+      Dec(FRepeatCount);
+    if FRepeatCount = 0 then
+      Exit;
+
+    Result := False;
+    ResultValue := JsUndefinedValue;
+    FTime := GetTickCount;
+  end;
 end;
 
 { TCallbackMessage public }
 
-constructor TCallbackMessage.Create(AContext: TChakraCoreContext; ATask: JsValueRef);
+constructor TTaskMessage.Create(AContext: TChakraCoreContext; Task, ThisArg: JsValueRef;
+  const Args: array of JsValueRef; ADelay: Cardinal; ARepeatCount: Integer);
+var
+  I: Integer;
 begin
   inherited Create(AContext);
-  ChakraCoreCheck(JsAddRef(ATask, nil));
-  FTask := ATask;
+  FTask := Task;
+  ChakraCoreCheck(JsAddRef(FTask, nil));
+
+  FArgCount := Length(Args);
+  FArgs := AllocMem((FArgCount + 1) * SizeOf(PJsValueRef));
+  if Assigned(ThisArg) then
+    FArgs^[0] := ThisArg
+  else
+    FArgs^[0] := Context.Global;
+  ChakraCoreCheck(JsAddRef(FArgs^[0], nil));
+
+  for I := 1 to FArgCount do
+  begin
+    FArgs^[I] := Args[I - 1];
+    ChakraCoreCheck(JsAddRef(FArgs^[I], nil));
+  end;
+
+  FDelay := ADelay;
+  FRepeatCount := ARepeatCount;
+  FTime := GetTickCount;
 end;
 
-destructor TCallbackMessage.Destroy;
+destructor TTaskMessage.Destroy;
+var
+  I: Integer;
 begin
+  if Assigned(FArgs) then
+  begin
+    for I := 0 to FArgCount do
+      if Assigned(FArgs^[I]) then
+        ChakraCoreCheck(JsRelease(FArgs^[I], nil));
+    FreeMem(FArgs);
+  end;
+  FArgs := nil;
+  FArgCount := 0;
   if Assigned(FTask) then
     ChakraCoreCheck(JsRelease(FTask, nil));
   FTask := nil;
   inherited Destroy;
 end;
 
+{ TPromiseMessage protected }
+
+function TPromiseMessage.Process(out ResultValue: JsHandle): Boolean;
+begin
+  Result := False;
+  ResultValue := JsUndefinedValue;
+  case FStatus of
+    psPending:
+      Exit;
+    psResolved:
+      ResultValue := JsCallFunction(FResolveTask, @FArgs[0], 2);
+    psRejected:
+      ResultValue := JsCallFunction(FRejectTask, @Fargs[0], 2);
+  end;
+  Result := True;
+end;
+
+procedure TPromiseMessage.SetStatus(Value: TPromiseStatus; StatusValue: JsValueRef);
+begin
+  FArgs[1] := StatusValue;
+  FStatus := Value;
+end;
+
+{ TPromiseMessage public }
+
+constructor TPromiseMessage.Create(AContext: TChakraCoreContext; ThisArg, ResolveTask, RejectTask: JsValueRef);
+begin
+  inherited Create(AContext);
+  FArgs[0] := ThisArg;
+  ChakraCoreCheck(JsAddRef(FArgs[0], nil));
+  FArgs[1] := nil;
+  FResolveTask := ResolveTask;
+  ChakraCoreCheck(JsAddRef(FResolveTask, nil));
+  FRejectTask := RejectTask;
+  ChakraCoreCheck(JsAddRef(FRejectTask, nil));
+end;
+
+destructor TPromiseMessage.Destroy;
+begin
+  if Assigned(FRejectTask) then
+    ChakraCoreCheck(JsRelease(FRejectTask, nil));
+  FRejectTask := nil;
+  if Assigned(FResolveTask) then
+    ChakraCoreCheck(JsRelease(FResolveTask, nil));
+  FResolveTask := nil;
+  if Assigned(FArgs[0]) then
+    ChakraCoreCheck(JsRelease(FArgs[0], nil));
+  FArgs[0] := nil;
+  if Assigned(FArgs[1]) then
+    ChakraCoreCheck(JsRelease(FArgs[1], nil));
+  FArgs[1] := nil;
+  inherited Destroy;
+end;
+
 { TModuleMessage protected }
 
-function TModuleMessage.Process: JsValueRef;
+function TModuleMessage.Process(out ResultValue: JsValueRef): Boolean;
 begin
   ChakraCoreCheck(JsModuleEvaluation(FModule.Handle, FModule.FResult));
-  Result := FModule.FResult;
+  Result := True;
+  ResultValue := FModule.FResult;
 end;
 
 { TModuleMessage public }
@@ -1016,11 +1150,11 @@ end;
 
 procedure TChakraCoreContext.DoPromiseContinuation(Task: JsValueRef);
 var
-  AMessage: TCallbackMessage;
+  AMessage: TTaskMessage;
 begin
-  AMessage := TCallbackMessage.Create(Self, Task);
+  AMessage := TTaskMessage.Create(Self, Task, nil, []);
   try
-    FMessageQueue.Push(AMessage);
+    PostMessage(AMessage);
   except
     AMessage.Free;
     raise;
@@ -1095,15 +1229,15 @@ end;
 procedure TChakraCoreContext.ProcessMessages;
 var
   AMessage: TBaseMessage;
+  ResultValue: JsValueRef;
 begin
   while FMessageQueue.Count > 0 do
   begin
     AMessage := FMessageQueue.Pop;
-    try
-      AMessage.Process;
-    finally
-      AMessage.Free;
-    end;
+    if AMessage.Process(ResultValue) then
+      AMessage.Free
+    else
+      FMessageQueue.Push(AMessage);
   end;
 end;
 
@@ -1153,6 +1287,12 @@ begin
   ModuleNeeded(AName);
 end;
 
+function TChakraCoreContext.CallFunction(Func: JsValueRef; Args: PJsValueRef; ArgCount: Word): JsValueRef;
+begin
+  Result := JsCallFunction(Func, Args, ArgCount);
+  ProcessMessages;
+end;
+
 function TChakraCoreContext.CallFunction(const AName: UTF8String; const Args: array of JsValueRef;
   Instance: JsValueRef): JsValueRef;
 begin
@@ -1160,10 +1300,21 @@ begin
   ProcessMessages;
 end;
 
+function TChakraCoreContext.CallFunction(const AName: UnicodeString; const Args: array of JsValueRef;
+  Instance: JsValueRef): JsValueRef;
+begin
+  Result := CallFunction(UTF8Encode(AName), Args, Instance);
+end;
+
 function TChakraCoreContext.CallNew(const AConstructorName: UTF8String; const Args: array of JsValueRef): JsValueRef;
 begin
   Result := JsNew(UTF8Decode(AConstructorName), Args);
   ProcessMessages;
+end;
+
+function TChakraCoreContext.CallNew(const AConstructorName: UnicodeString; const Args: array of JsValueRef): JsValueRef;
+begin
+  Result := CallNew(UTF8Encode(AConstructorName), Args);
 end;
 
 class function TChakraCoreContext.CurrentContext: TChakraCoreContext;
@@ -1196,6 +1347,11 @@ begin
       Result := Modules[I];
       Break;
     end;
+end;
+
+procedure TChakraCoreContext.PostMessage(AMessage: TBaseMessage);
+begin
+  FMessageQueue.Push(AMessage);
 end;
 
 function TChakraCoreContext.RunScript(const Script, AName: UTF8String): JsValueRef;

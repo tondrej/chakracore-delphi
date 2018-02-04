@@ -43,7 +43,7 @@ uses
 {$ifdef HAS_WIDESTRUTILS}
   WideStrUtils,
 {$endif}
-  Compat, ChakraCoreUtils, ChakraCoreClasses, Console;
+  Compat, ChakraCommon, ChakraCore, ChakraCoreUtils, ChakraCoreClasses, Console;
 
 type
   TDataModuleMain = class(TDataModule)
@@ -91,6 +91,109 @@ begin
     Result := UTF8ToString(S);
   finally
     FileStream.Free;
+  end;
+end;
+
+type
+  THackChakraCoreContext = class(TChakraCoreContext);
+
+function PostTimedTask(Args: PJsValueRefArray; ArgCount: Word; CallbackState: Pointer; RepeatCount: Integer): JsValueRef;
+var
+  DataModule: TDataModuleMain absolute CallbackState;
+  AMessage: TTaskMessage;
+  Delay: Cardinal;
+  FuncArgs: array[0..0] of JsValueRef;
+  I: Integer;
+begin
+  Result := JsUndefinedValue;
+
+  if ArgCount < 2 then // thisarg, function to call, optional: delay, function args
+    raise Exception.Create('Invalid arguments');
+
+  if ArgCount >= 3 then
+    Delay := JsNumberToInt(Args^[2])
+  else
+    Delay := 0;
+  if True then
+
+
+  if ArgCount >= 4 then
+  begin
+    for I := 0 to ArgCount - 4 do
+      FuncArgs[I] := Args^[I + 3];
+  end;
+
+  AMessage := TTaskMessage.Create(DataModule.Context, Args^[1], Args^[0], FuncArgs, Delay, RepeatCount);
+  try
+    DataModule.Context.PostMessage(AMessage);
+  except
+    AMessage.Free;
+    raise;
+  end;
+end;
+
+function SetInterval_Callback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRefArray; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+begin
+  Result := PostTimedTask(Args, ArgCount, CallbackState, -1); // repeat endlessly
+end;
+
+function SetTimeout_Callback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRefArray; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+begin
+  Result := PostTimedTask(Args, ArgCount, CallbackState, 1); // run once
+end;
+
+type
+  THackPromiseMessage = class(TPromiseMessage);
+
+  TDummyPromiseThread = class(TThread)
+  private
+    FMessage: TPromiseMessage;
+    FTimeout: Cardinal;
+    FValue: JsValueRef;
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(AMessage: TPromiseMessage; ATimeout: Cardinal);
+  end;
+
+{ TTestPromiseThread }
+
+procedure TDummyPromiseThread.Execute;
+begin
+  Sleep(FTimeout);
+  THackPromiseMessage(FMessage).SetStatus(psResolved, FValue);
+end;
+
+constructor TDummyPromiseThread.Create(AMessage: TPromiseMessage; ATimeout: Cardinal);
+begin
+  FMessage := AMessage;
+  FTimeout := ATimeout;
+  FValue := StringToJsString('Success!');
+  ChakraCoreCheck(JsAddRef(FValue, nil));
+  FreeOnTerminate := True;
+  inherited Create(False);
+end;
+
+function TestPromise_Callback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRefArray;
+  ArgCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  DataModule: TDataModuleMain absolute CallbackState;
+  AMessage: TPromiseMessage;
+  ResolveTask, RejectTask, Error: JsValueRef;
+begin
+  if ArgCount <> 2 then // thisarg, timeout
+    raise Exception.Create('Invalid arguments');
+
+  JsCreatePromise(Result, ResolveTask, RejectTask);
+  AMessage := TPromiseMessage.Create(DataModule.Context, Args^[0], ResolveTask, RejectTask);
+  try
+    TDummyPromiseThread.Create(AMessage, JsNumberToInt(Args^[1]));
+    DataModule.Context.PostMessage(AMessage);
+  except
+    AMessage.Free;
+    raise;
   end;
 end;
 
@@ -165,6 +268,11 @@ begin
     FConsole := TConsole.Create;
     FConsole.OnPrint := ConsolePrint;
     JsSetProperty(FContext.Global, 'console', FConsole.Instance);
+
+    JsSetCallback(FContext.Global, 'setTimeout', @SetTimeout_Callback, Self, True);
+    JsSetCallback(FContext.Global, 'setInterval', @SetInterval_Callback, Self, True);
+    JsSetCallback(FContext.Global, 'testPromise', @TestPromise_Callback, Self, True);
+
   except
     FConsole := nil;
     FreeAndNil(FContext);

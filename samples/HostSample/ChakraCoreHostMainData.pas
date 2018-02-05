@@ -112,8 +112,6 @@ begin
     Delay := JsNumberToInt(Args^[2])
   else
     Delay := 0;
-  if True then
-
 
   if ArgCount >= 4 then
   begin

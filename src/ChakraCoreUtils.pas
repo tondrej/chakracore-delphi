@@ -764,15 +764,18 @@ end;
 
 function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef; Instance: JsValueRef): JsValueRef;
 var
+  L: Integer;
   Func: JsValueRef;
   NewArgs: array of JsValueRef;
 begin
   if not Assigned(Instance) then
     Instance := JsGlobal;
   Func := JsGetProperty(Instance, FunctionName);
-  SetLength(NewArgs, Length(Args) + 1);
+  L := Length(Args);
+  SetLength(NewArgs, L + 1);
   NewArgs[0] := Instance;
-  Move(Args[0], NewArgs[1], Length(Args) * SizeOf(JsValueRef));
+  if L > 0 then
+    Move(Args[0], NewArgs[1], L * SizeOf(JsValueRef));
   Result := JsCallFunction(Func, NewArgs);
 end;
 

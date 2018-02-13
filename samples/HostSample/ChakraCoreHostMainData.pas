@@ -92,9 +92,6 @@ begin
   end;
 end;
 
-type
-  THackChakraCoreContext = class(TChakraCoreContext);
-
 function PostTimedTask(Args: PJsValueRefArray; ArgCount: Word; CallbackState: Pointer; RepeatCount: Integer): JsValueRef;
 var
   DataModule: TDataModuleMain absolute CallbackState;
@@ -177,7 +174,7 @@ function TestPromise_Callback(Callee: JsValueRef; IsConstructCall: bool; Args: P
 var
   DataModule: TDataModuleMain absolute CallbackState;
   AMessage: TPromiseMessage;
-  ResolveTask, RejectTask, Error: JsValueRef;
+  ResolveTask, RejectTask: JsValueRef;
 begin
   if ArgCount <> 2 then // thisarg, timeout
     raise Exception.Create('Invalid arguments');

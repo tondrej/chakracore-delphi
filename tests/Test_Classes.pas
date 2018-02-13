@@ -47,11 +47,16 @@ type
   TChakraCoreContextTestCase = class(TBaseTestCase)
   end;
 
+  { TNativeClassTestCase }
+
   TNativeClassTestCase = class(TBaseTestCase)
   published
     procedure TestMethod1AsScript;
     procedure TestMethod1AsFunction;
     procedure TestNamedProperty;
+    procedure TestProjectedClass;
+    procedure TestClassProjectedTwice;
+    procedure TestClassProjectedInMultipleContexts;
   end;
 
 implementation
@@ -185,6 +190,68 @@ begin
   finally
     TestObject.Free;
     Context.Free;
+    Runtime.Free;
+  end;
+end;
+
+procedure TNativeClassTestCase.TestProjectedClass;
+const
+  SScript = 'var obj = new TestObject(); var s1 = obj.method1(); obj.prop1 = s1; var s2 = obj.prop1;';
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([]);
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    TTestObject1.Project('TestObject');
+    Context.RunScript(SScript, 'TestProjectedClass.js');
+    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context.Global, 's1')), 's1');
+    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context.Global, 's2')), 's2');
+  finally
+    Context.Free;
+    Runtime.Free;
+  end;
+end;
+
+procedure TNativeClassTestCase.TestClassProjectedTwice;
+begin
+  TestProjectedClass;
+  TestProjectedClass;
+end;
+
+procedure TNativeClassTestCase.TestClassProjectedInMultipleContexts;
+const
+  SScript = 'var obj = new TestObject(); var s1 = obj.method1(); obj.prop1 = s1; var s2 = obj.prop1;';
+var
+  Runtime: TChakraCoreRuntime;
+  Context1, Context2: TChakraCoreContext;
+begin
+  Runtime := nil;
+  Context1 := nil;
+  Context2 := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([]);
+    Context1 := TChakraCoreContext.Create(Runtime);
+    Context2 := TChakraCoreContext.Create(Runtime);
+
+    Context1.Activate;
+    TTestObject1.Project('TestObject');
+    Context1.RunScript(SScript, 'TestProjectedClass1.js');
+    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context1.Global, 's1')), 's1');
+    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context1.Global, 's2')), 's2');
+
+    Context2.Activate;
+    TTestObject1.Project('TestObject');
+    Context2.RunScript(SScript, 'TestProjectedClass2.js');
+    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context2.Global, 's1')), 's1');
+    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context2.Global, 's2')), 's2');
+  finally
+    Context2.Free;
+    Context1.Free;
     Runtime.Free;
   end;
 end;

@@ -198,7 +198,8 @@ type
   end;
 
   TNativeObject = class;
-  
+  TNativeClass = class of TNativeObject;
+
   TLoadModuleEvent = procedure(Sender: TObject; Module: TChakraModule) of object;
   TNativeObjectCreatedEvent = procedure(Sender: TObject; NativeObject: TNativeObject) of object;
 
@@ -211,6 +212,7 @@ type
     FMessageQueue: TQueue;
     FModules: TStringList;
     FName: UnicodeString;
+    FProjectedClasses: TList;
     FProxyTargetSymbol: JsValueRef;
     FRuntime: TChakraCoreRuntime;
     FSourceContext: NativeUInt;
@@ -218,6 +220,8 @@ type
     FOnLoadModule: TLoadModuleEvent;
     FOnNativeObjectCreated: TNativeObjectCreatedEvent;
 
+    function AddPrototype(AClass: TNativeClass; APrototype: JsValueRef = nil): Integer;
+    function FindPrototype(AClass: TNativeClass): JsValueRef;
     function GetData: Pointer;
     function GetHandle: JsContextRef;
     function GetGlobal: JsValueRef;
@@ -290,8 +294,6 @@ type
     property Handle: JsValueRef read FHandle;
   end;
 
-  TNativeClass = class of TNativeObject;
-
   TNativeMethod = function(Args: PJsValueRef; ArgCount: Word): JsValueRef of object;
   TNativeGetAccessorMethod = function: JsValueRef of object;
   TNativeSetAccessorMethod = procedure(Value: JsValueRef) of object;
@@ -337,75 +339,6 @@ type
     AClass: TNativeClass;
     APrototype: JsValueRef;
   end;
-
-var
-  Lock: TRTLCriticalSection;
-  ProjectedClasses: TList = nil;
-
-function AddPrototype(AClass: TNativeClass; APrototype: JsValueRef = nil): Integer;
-var
-  Info: PProjectedClassInfo;
-begin
-  if not Assigned(APrototype) then
-    APrototype := JsCreateObject;
-
-  GetMem(Info, SizeOf(TProjectedClassInfo));
-  try
-    Info^.AClass := AClass;
-    Info^.APrototype := APrototype;
-
-    Result := ProjectedClasses.Add(Info);
-  except
-    FreeMem(Info);
-    raise;
-  end;
-end;
-
-function FindPrototype(AClass: TNativeClass): JsValueRef;
-var
-  I: Integer;
-begin
-  Result := nil;
-
-  EnterCriticalSection(Lock);
-  try
-    for I := 0 to ProjectedClasses.Count - 1 do
-      if PProjectedClassInfo(ProjectedClasses[I])^.AClass = AClass then
-      begin
-        Result := PProjectedClassInfo(ProjectedClasses[I])^.APrototype;
-        Break;
-      end;
-  finally
-    LeaveCriticalSection(Lock);
-  end;
-end;
-
-procedure InitializeProjectedClasses;
-begin
-  InitCriticalSection(Lock);
-
-  EnterCriticalSection(Lock);
-  try
-    ProjectedClasses := TList.Create;
-  finally
-    LeaveCriticalSection(Lock);
-  end;
-end;
-
-procedure FinalizeProjectedClasses;
-var
-  I: Integer;
-begin
-  EnterCriticalSection(Lock);
-  try
-    for I := 0 to ProjectedClasses.Count - 1 do
-      FreeMem(ProjectedClasses[I]);
-    FreeAndNil(ProjectedClasses);
-  finally
-    LeaveCriticalSection(Lock);
-    DoneCriticalsection(Lock);
-  end;
-end;
 
 procedure BeforeCollectCallback(callbackState: Pointer); {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 begin
@@ -1072,6 +1005,39 @@ end;
 
 { TChakraCoreContext private }
 
+function TChakraCoreContext.AddPrototype(AClass: TNativeClass; APrototype: JsValueRef): Integer;
+var
+  Info: PProjectedClassInfo;
+begin
+  if not Assigned(APrototype) then
+    APrototype := JsCreateObject;
+
+  GetMem(Info, SizeOf(TProjectedClassInfo));
+  try
+    Info^.AClass := AClass;
+    Info^.APrototype := APrototype;
+
+    Result := FProjectedClasses.Add(Info);
+  except
+    FreeMem(Info);
+    raise;
+  end;
+end;
+
+function TChakraCoreContext.FindPrototype(AClass: TNativeClass): JsValueRef;
+var
+  I: Integer;
+begin
+  Result := nil;
+
+  for I := 0 to FProjectedClasses.Count - 1 do
+    if PProjectedClassInfo(FProjectedClasses[I])^.AClass = AClass then
+    begin
+      Result := PProjectedClassInfo(FProjectedClasses[I])^.APrototype;
+      Break;
+    end;
+end;
+
 function TChakraCoreContext.GetData: Pointer;
 begin
   ChakraCoreCheck(JsGetContextData(FHandle, Result));
@@ -1256,10 +1222,16 @@ begin
   FModules.Duplicates := dupError;
   FModules.Sorted := True;
   FSourceContext := 0;
+  FProjectedClasses := TList.Create;
 end;
 
 destructor TChakraCoreContext.Destroy;
+var
+  I: Integer;
 begin
+  for I := FProjectedClasses.Count - 1 downto 0 do
+    FreeMem(FProjectedClasses[I]);
+  FreeAndNil(FProjectedClasses);
   FGlobal := JS_INVALID_REFERENCE;
   FHandle := JS_INVALID_REFERENCE;
   FRuntime := nil;
@@ -1433,7 +1405,7 @@ end;
 
 class procedure TNativeObject.RegisterPrototype;
 begin
-  AddPrototype(Self);
+  TChakraCoreContext.CurrentContext.AddPrototype(Self);
   RegisterMethods(Prototype);
   RegisterProperties(Prototype);
 end;
@@ -1442,7 +1414,7 @@ end;
 
 class function TNativeObject.Prototype: JsValueRef;
 begin
-  Result := FindPrototype(Self);
+  Result := TChakraCoreContext.CurrentContext.FindPrototype(Self);
 end;
 
 class procedure TNativeObject.RegisterMethod(AInstance: JsValueRef; const AName: UnicodeString;
@@ -1545,11 +1517,5 @@ begin
   RegisterPrototype;
   ChakraCoreCheck(JsSetPrototype(ConstructorFunc, Prototype));
 end;
-
-initialization
-  InitializeProjectedClasses;
-
-finalization
-  FinalizeProjectedClasses;
 
 end.

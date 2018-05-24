@@ -1,10 +1,10 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{2b63895c-8001-41eb-a2d0-6815b28b3222}</ProjectGuid>
-        <MainSource>ChakraCoreHostSample.dpr</MainSource>
+        <ProjectGuid>{01f91de3-a053-4032-ac0c-ba8b9af05f13}</ProjectGuid>
+        <MainSource>SimpleHost.dpr</MainSource>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-        <DCC_DependencyCheckOutputName>..\..\bin\Win32\Debug\ChakraCoreHostSample.exe</DCC_DependencyCheckOutputName>
+        <DCC_DependencyCheckOutputName>..\..\bin\Win32\Debug\SimpleHost.exe</DCC_DependencyCheckOutputName>
         <ProjectVersion>18.4</ProjectVersion>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
@@ -102,9 +102,9 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreHostSample;LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreHostSample;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <SanitizedProjectName>ChakraCoreHostSample_Tokyo</SanitizedProjectName>
-        <DCC_DependencyCheckOutputName>ChakraCoreHostSample.exe</DCC_DependencyCheckOutputName>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=SimpleHost;LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=SimpleHost;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <SanitizedProjectName>SimpleHost_Tokyo</SanitizedProjectName>
+        <DCC_DependencyCheckOutputName>SimpleHost.exe</DCC_DependencyCheckOutputName>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <Icns_MainIcns>$(BDS)\bin\delphi_PROJECTICNS.icns</Icns_MainIcns>
         <DCC_ExeOutput>..\..\bin\$(Platform)\$(Config)</DCC_ExeOutput>
@@ -188,20 +188,20 @@
         <iPad_Launch2048x1536>$(BDS)\bin\Artwork\iOS\iPad\FM_LaunchImageLandscape_2048x1536.png</iPad_Launch2048x1536>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
-        <Icon_MainIcon>ChakraCoreHostSample_Icon.ico</Icon_MainIcon>
-        <Debugger_RunParams>..\..\..\samples\HostSample\scripts\main.js</Debugger_RunParams>
+        <Icon_MainIcon>SimpleHost_Icon.ico</Icon_MainIcon>
+        <Debugger_RunParams>..\..\..\samples\SimpleHostSample\scripts\hello.js</Debugger_RunParams>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);FileDescription=$(MSBuildProjectName);ProductName=$(MSBuildProjectName)</VerInfo_Keys>
         <Manifest_File>(None)</Manifest_File>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <Icon_MainIcon>ChakraCoreHostSample_Icon.ico</Icon_MainIcon>
+        <Icon_MainIcon>SimpleHost_Icon.ico</Icon_MainIcon>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <Manifest_File>(None)</Manifest_File>
-        <Debugger_RunParams>..\..\..\samples\HostSample\scripts\main.js</Debugger_RunParams>
+        <Debugger_RunParams>..\..\..\samples\SimpleHostSample\scripts\hello.js</Debugger_RunParams>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <Version>7.0</Version>
@@ -212,15 +212,15 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);FileDescription=$(MSBuildProjectName);ProductName=$(MSBuildProjectName)</VerInfo_Keys>
-        <Icon_MainIcon>ChakraCoreHostSample_Icon.ico</Icon_MainIcon>
+        <Icon_MainIcon>SimpleHost_Icon.ico</Icon_MainIcon>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <Icon_MainIcon>ChakraCoreHostSample_Icon.ico</Icon_MainIcon>
+        <Icon_MainIcon>SimpleHost_Icon.ico</Icon_MainIcon>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
-        <DCC_DependencyCheckOutputName>..\..\bin\Win32\Debug\ChakraCoreHostSample.exe</DCC_DependencyCheckOutputName>
+        <DCC_DependencyCheckOutputName>..\..\bin\Win32\Debug\SimpleHost.exe</DCC_DependencyCheckOutputName>
         <Version>7.0</Version>
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
         <DCC_ObjOutput>..\..\lib\Win32\Debug</DCC_ObjOutput>
@@ -242,14 +242,14 @@
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
         <DCC_Optimize>false</DCC_Optimize>
-        <Debugger_RunParams>..\..\..\samples\HostSample\scripts\main.js</Debugger_RunParams>
+        <Debugger_RunParams>..\..\..\samples\SimpleHostSample\scripts\hello.js</Debugger_RunParams>
         <Manifest_File>None</Manifest_File>
         <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);FileDescription=$(MSBuildProjectName);ProductName=$(MSBuildProjectName)</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
         <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <Icon_MainIcon>ChakraCoreHostSample_Icon.ico</Icon_MainIcon>
+        <Icon_MainIcon>SimpleHost_Icon.ico</Icon_MainIcon>
     </PropertyGroup>
     <ProjectExtensions>
         <Borland.Personality>Delphi.Personality.12</Borland.Personality>
@@ -257,7 +257,7 @@
         <BorlandProject>
             <Delphi.Personality>
                 <Parameters>
-                    <Parameters Name="RunParams">test.js</Parameters>
+                    <Parameters Name="RunParams">..\..\..\samples\SimpleHostSample\scripts\hello.js</Parameters>
                     <Parameters Name="UseLauncher">False</Parameters>
                     <Parameters Name="LoadAllSymbols">True</Parameters>
                     <Parameters Name="LoadUnspecifiedSymbols">False</Parameters>
@@ -281,16 +281,16 @@
                     <VersionInfoKeys Name="CompanyName"/>
                     <VersionInfoKeys Name="FileDescription"/>
                     <VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
-                    <VersionInfoKeys Name="InternalName">ChakraCoreHostSample</VersionInfoKeys>
+                    <VersionInfoKeys Name="InternalName">SimpleHost</VersionInfoKeys>
                     <VersionInfoKeys Name="LegalCopyright">© 2018 Ondrej Kelle</VersionInfoKeys>
                     <VersionInfoKeys Name="LegalTrademarks"/>
-                    <VersionInfoKeys Name="OriginalFilename">ChakraCoreHostSample</VersionInfoKeys>
+                    <VersionInfoKeys Name="OriginalFilename">SimpleHost</VersionInfoKeys>
                     <VersionInfoKeys Name="ProductName"/>
                     <VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
                     <VersionInfoKeys Name="Comments"/>
                 </VersionInfoKeys>
                 <Source>
-                    <Source Name="MainSource">ChakraCoreHostSample.dpr</Source>
+                    <Source Name="MainSource">SimpleHost.dpr</Source>
                 </Source>
                 <Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\bcboffice2k250.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
@@ -316,10 +316,6 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="ChakraCoreHostMainData.pas">
-            <Form>DataModuleMain</Form>
-            <DesignClass>TDataModule</DesignClass>
-        </DCCReference>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

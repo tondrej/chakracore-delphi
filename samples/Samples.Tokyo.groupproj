@@ -9,6 +9,9 @@
         <Projects Include="..\tests\ChakraCoreTestsUI.Tokyo.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="SimpleHostSample\SimpleHost.Tokyo.dproj">
+            <Dependencies/>
+        </Projects>
         <Projects Include="HostSample\ChakraCoreHostSample.Tokyo.dproj">
             <Dependencies/>
         </Projects>
@@ -38,6 +41,15 @@
     <Target Name="ChakraCoreTestsUI_Tokyo:Make">
         <MSBuild Projects="..\tests\ChakraCoreTestsUI.Tokyo.dproj" Targets="Make"/>
     </Target>
+    <Target Name="SimpleHost_Tokyo">
+        <MSBuild Projects="SimpleHostSample\SimpleHost.Tokyo.dproj"/>
+    </Target>
+    <Target Name="SimpleHost_Tokyo:Clean">
+        <MSBuild Projects="SimpleHostSample\SimpleHost.Tokyo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="SimpleHost_Tokyo:Make">
+        <MSBuild Projects="SimpleHostSample\SimpleHost.Tokyo.dproj" Targets="Make"/>
+    </Target>
     <Target Name="ChakraCoreHostSample_Tokyo">
         <MSBuild Projects="HostSample\ChakraCoreHostSample.Tokyo.dproj"/>
     </Target>
@@ -48,13 +60,13 @@
         <MSBuild Projects="HostSample\ChakraCoreHostSample.Tokyo.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="ChakraCoreTests_Tokyo;ChakraCoreTestsUI_Tokyo;ChakraCoreHostSample_Tokyo"/>
+        <CallTarget Targets="ChakraCoreTests_Tokyo;ChakraCoreTestsUI_Tokyo;SimpleHost_Tokyo;ChakraCoreHostSample_Tokyo"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="ChakraCoreTests_Tokyo:Clean;ChakraCoreTestsUI_Tokyo:Clean;ChakraCoreHostSample_Tokyo:Clean"/>
+        <CallTarget Targets="ChakraCoreTests_Tokyo:Clean;ChakraCoreTestsUI_Tokyo:Clean;SimpleHost_Tokyo:Clean;ChakraCoreHostSample_Tokyo:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="ChakraCoreTests_Tokyo:Make;ChakraCoreTestsUI_Tokyo:Make;ChakraCoreHostSample_Tokyo:Make"/>
+        <CallTarget Targets="ChakraCoreTests_Tokyo:Make;ChakraCoreTestsUI_Tokyo:Make;SimpleHost_Tokyo:Make;ChakraCoreHostSample_Tokyo:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

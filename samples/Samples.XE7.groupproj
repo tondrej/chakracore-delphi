@@ -9,6 +9,9 @@
         <Projects Include="..\tests\ChakraCoreTestsUI.XE7.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="SimpleHostSample\SimpleHost.XE7.dproj">
+            <Dependencies/>
+        </Projects>
         <Projects Include="HostSample\ChakraCoreHostSample.XE7.dproj">
             <Dependencies/>
         </Projects>
@@ -38,6 +41,15 @@
     <Target Name="ChakraCoreTestsUI_XE7:Make">
         <MSBuild Projects="..\tests\ChakraCoreTestsUI.XE7.dproj" Targets="Make"/>
     </Target>
+    <Target Name="SimpleHost_XE7">
+        <MSBuild Projects="SimpleHostSample\SimpleHost.XE7.dproj"/>
+    </Target>
+    <Target Name="SimpleHost_XE7:Clean">
+        <MSBuild Projects="SimpleHostSample\SimpleHost.XE7.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="SimpleHost_XE7:Make">
+        <MSBuild Projects="SimpleHostSample\SimpleHost.XE7.dproj" Targets="Make"/>
+    </Target>
     <Target Name="ChakraCoreHostSample_XE7">
         <MSBuild Projects="HostSample\ChakraCoreHostSample.XE7.dproj"/>
     </Target>
@@ -48,13 +60,13 @@
         <MSBuild Projects="HostSample\ChakraCoreHostSample.XE7.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="ChakraCoreTests_XE7;ChakraCoreTestsUI_XE7;ChakraCoreHostSample_XE7"/>
+        <CallTarget Targets="ChakraCoreTests_XE7;ChakraCoreTestsUI_XE7;SimpleHost_XE7;ChakraCoreHostSample_XE7"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="ChakraCoreTests_XE7:Clean;ChakraCoreTestsUI_XE7:Clean;ChakraCoreHostSample_XE7:Clean"/>
+        <CallTarget Targets="ChakraCoreTests_XE7:Clean;ChakraCoreTestsUI_XE7:Clean;SimpleHost_XE7:Clean;ChakraCoreHostSample_XE7:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="ChakraCoreTests_XE7:Make;ChakraCoreTestsUI_XE7:Make;ChakraCoreHostSample_XE7:Make"/>
+        <CallTarget Targets="ChakraCoreTests_XE7:Make;ChakraCoreTestsUI_XE7:Make;SimpleHost_XE7:Make;ChakraCoreHostSample_XE7:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

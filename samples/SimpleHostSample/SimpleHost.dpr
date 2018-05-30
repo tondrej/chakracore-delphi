@@ -83,7 +83,9 @@ var
 begin
   if ParamCount = 0 then
     Exit;
-    
+
+  Runtime := nil;
+  Context := nil;
   try
     Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);

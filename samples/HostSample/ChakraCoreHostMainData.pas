@@ -44,6 +44,9 @@ uses
   Compat, ChakraCommon, ChakraCore, ChakraCoreUtils, ChakraCoreClasses, Console;
 
 type
+
+  { TDataModuleMain }
+
   TDataModuleMain = class(TDataModule)
     procedure DataModuleCreate(Sender: TObject);
     procedure DataModuleDestroy(Sender: TObject);
@@ -55,6 +58,7 @@ type
     FUseAnsiColors: Boolean;
 
     procedure ConsolePrint(Sender: TObject; const Text: UnicodeString; Level: TInfoLevel = ilNone);
+    procedure ContextActivate(Sender: TObject);
     procedure ContextLoadModule(Sender: TObject; Module: TChakraModule);
     procedure ContextNativeObjectCreated(Sender: TObject; NativeObject: TNativeObject);
   public
@@ -229,6 +233,22 @@ begin
 {$endif}
 end;
 
+procedure TDataModuleMain.ContextActivate(Sender: TObject);
+begin
+  // expose global.console
+  FConsole := TConsole.Create;
+  FConsole.OnPrint := ConsolePrint;
+  JsSetProperty(FContext.Global, 'console', FConsole.Instance);
+
+  // expose additional functions
+  JsSetCallback(FContext.Global, 'setTimeout', @SetTimeout_Callback, Self, True);
+  JsSetCallback(FContext.Global, 'setInterval', @SetInterval_Callback, Self, True);
+  JsSetCallback(FContext.Global, 'testPromise', @TestPromise_Callback, Self, True);
+
+  // project TConsole class so scripts can create instances, e.g. var console2 = new Console();
+  TConsole.Project('Console');
+end;
+
 procedure TDataModuleMain.ContextLoadModule(Sender: TObject; Module: TChakraModule);
 var
   ModuleFileName: UnicodeString;
@@ -252,20 +272,9 @@ begin
   try
     FRuntime := TChakraCoreRuntime.Create([ccroEnableExperimentalFeatures, ccroDispatchSetExceptionsToDebugger]);
     FContext := TChakraCoreContext.Create(FRuntime);
+    FContext.OnActivate := ContextActivate;
     FContext.OnLoadModule := ContextLoadModule;
     FContext.OnNativeObjectCreated := ContextNativeObjectCreated;
-    FContext.Activate;
-
-    TConsole.Project('Console');
-
-    FConsole := TConsole.Create;
-    FConsole.OnPrint := ConsolePrint;
-    JsSetProperty(FContext.Global, 'console', FConsole.Instance);
-
-    JsSetCallback(FContext.Global, 'setTimeout', @SetTimeout_Callback, Self, True);
-    JsSetCallback(FContext.Global, 'setInterval', @SetInterval_Callback, Self, True);
-    JsSetCallback(FContext.Global, 'testPromise', @TestPromise_Callback, Self, True);
-
   except
     FConsole := nil;
     FreeAndNil(FContext);

@@ -217,6 +217,7 @@ type
     FRuntime: TChakraCoreRuntime;
     FSourceContext: NativeUInt;
 
+    FOnActivate: TNotifyEvent;
     FOnLoadModule: TLoadModuleEvent;
     FOnNativeObjectCreated: TNativeObjectCreatedEvent;
 
@@ -232,6 +233,7 @@ type
   protected
     procedure ClearModules;
     function CreateModule(const AName: UnicodeString; ARefModule: JsModuleRecord): TChakraModule; virtual;
+    procedure DoActivate; virtual;
     procedure DoLoadModule(Module: TChakraModule); virtual;
     procedure DoNativeObjectCreated(NativeObject: TNativeObject); virtual;
     procedure DoPromiseContinuation(Task: JsValueRef); virtual;
@@ -274,6 +276,7 @@ type
     property ProxyTargetSymbol: JsValueRef read FProxyTargetSymbol;
     property Runtime: TChakraCoreRuntime read FRuntime;
 
+    property OnActivate: TNotifyEvent read FOnActivate write FOnActivate;
     property OnLoadModule: TLoadModuleEvent read FOnLoadModule write FOnLoadModule;
     property OnNativeObjectCreated: TNativeObjectCreatedEvent read FOnNativeObjectCreated write FOnNativeObjectCreated;
   end;
@@ -1102,6 +1105,12 @@ begin
   end;
 end;
 
+procedure TChakraCoreContext.DoActivate;
+begin
+  if Assigned(FOnActivate) then
+    FOnActivate(Self);
+end;
+
 procedure TChakraCoreContext.DoLoadModule(Module: TChakraModule);
 begin
   if Assigned(FOnLoadModule) then
@@ -1246,6 +1255,7 @@ begin
   ChakraCoreCheck(JsSetCurrentContext(Handle));
   ChakraCoreCheck(JsSetPromiseContinuationCallback(PromiseContinuation, Self));
   FProxyTargetSymbol := JsCreateSymbol('__proxy_target__');
+  DoActivate;
 end;
 
 procedure TChakraCoreContext.AddModule(const AName: UTF8String);

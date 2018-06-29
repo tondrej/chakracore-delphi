@@ -171,7 +171,7 @@ type
   /// <remarks>
   ///     The runtime should be active on the current thread and in debug state.
   /// </remarks>
-  function JsDiagStopDebugging(runtimeHandle: JsRuntimeHandle; out callbackState: Pointer): JsErrorCode;
+  function JsDiagStopDebugging(runtimeHandle: JsRuntimeHandle; callbackState: PPointer): JsErrorCode;
     {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 
   /// <summary>
@@ -698,6 +698,7 @@ type
   ///     Creates a new runtime in Record Mode.
   /// </summary>
   /// <param name="attributes">The attributes of the runtime to be created.</param>
+  /// <param name="enableDebugging">A flag to enable debugging during record.</param>
   /// <param name="snapInterval">The interval to wait between snapshots (measured in millis).</param>
   /// <param name="snapHistoryLength">The amount of history to maintain before discarding -- measured in number of snapshots and controls how far back in time a trace can be reversed.</param>
   /// <param name="openResourceStream">The <c>TTDOpenResourceStreamCallback</c> function for generating a JsTTDStreamHandle to read/write serialized data.</param>
@@ -711,7 +712,7 @@ type
   /// <returns>
   ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
   /// </returns>
-  function JsTTDCreateRecordRuntime(attributes: JsRuntimeAttributes; snapInterval, snapHistoryLength: size_t;
+  function JsTTDCreateRecordRuntime(attributes: JsRuntimeAttributes; enableDebugging: bool; snapInterval, snapHistoryLength: size_t;
     openResourceStream: TTDOpenResourceStreamCallback; writeBytesToStream: JsTTDWriteBytesToStreamCallback;
     flushAndCloseStream: JsTTDFlushAndCloseStreamCallback; threadService: JsThreadServiceCallback;
     out runtime: JsRuntimeHandle): JsErrorCode; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
@@ -947,6 +948,24 @@ type
   function JsTTDReplayExecution(moveMode: JsTTDMoveMode; out rootEventTime: Int64): JsErrorCode;
     {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 
+  /// <summary>
+  ///     TTD API -- may change in future versions:
+  ///     Enable or disable autotrace ability from JsRT.
+  /// </summary>
+  /// <param name="status">True to enable autotracing false to disable it.</param>
+  /// <returns>The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.</returns>
+  function JsTTDDiagSetAutoTraceStatus(status: bool): JsErrorCode; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
+  /// <summary>
+  ///     TTD API -- may change in future versions:
+  ///     A way for the debugger to programatically write a trace when it is at a breakpoint.
+  /// </summary>
+  /// <param name="uri">The URI that the log should be written into.</param>
+  /// <param name="uriLength">The length of the uri array that the host passed in for storing log info.</param>
+  /// <returns>The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.</returns>
+  function JsTTDDiagWriteLog(uri: PAnsiChar; uriLength: size_t): JsErrorCode;
+    {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+
 implementation
 
 {$ifdef MSWINDOWS}
@@ -1003,5 +1022,7 @@ const
   function JsTTDPreExecuteSnapShotInterval; external _chakracore;
   function JsTTDMoveToTopLevelEvent; external _chakracore;
   function JsTTDReplayExecution; external _chakracore;
+  function JsTTDDiagSetAutoTraceStatus; external _chakracore;
+  function JsTTDDiagWriteLog; external _chakracore;
 
 end.

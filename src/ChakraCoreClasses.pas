@@ -55,7 +55,8 @@ type
     ccroDisableEval,                     // JsRuntimeAttributeDisableEval                     = $00000010;
     ccroEnableExperimentalFeatures,      // JsRuntimeAttributeEnableExperimentalFeatures      = $00000020;
     ccroDispatchSetExceptionsToDebugger, // JsRuntimeAttributeDispatchSetExceptionsToDebugger = $00000040;
-    ccroDisableFatalOnOOM                // JsRuntimeAttributeDisableFatalOnOOM               = $00000080;
+    ccroDisableFatalOnOOM,               // JsRuntimeAttributeDisableFatalOnOOM               = $00000080;
+    ccroDisableExecutablePageAllocation  // JsRuntimeAttributeDisableExecutablePageAllocation = $00000100;
   );
   TChakraCoreRuntimeOptions = set of TChakraCoreRuntimeOption;
 
@@ -585,6 +586,8 @@ begin
     Result := Result or JsRuntimeAttributeDispatchSetExceptionsToDebugger;
   if ccroDisableFatalOnOOM in Value then
     Result := Result or JsRuntimeAttributeDisableFatalOnOOM;
+  if ccroDisableExecutablePageAllocation in Value then
+    Result := Result or JsRuntimeAttributeDisableExecutablePageAllocation;
 end;
 
 { TChakraCoreRuntime private }

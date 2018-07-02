@@ -181,6 +181,9 @@ resourcestring
   SJsInvalidModuleHostInfoKind = 'Invalid module host info kind';
   SJsErrorModuleParsed = 'Module was parsed already when JsParseModuleSource is called';
   SJsErrorModuleEvaluated = 'Module was evaluated already when JsModuleEvaluation is called';
+  SJsNoWeakRefRequired = 'Argument passed to JsCreateWeakReference is a primitive that is not managed by the GC. No weak reference is required, the value will never be collected.';
+  SJsErrorPromisePending = 'The Promise object is still in the pending state.';
+  SJsErrorModuleNotEvaluated = 'Module was not yet evaluated when JsGetModuleNamespace was called.';
 
   // Category of errors that relates to errors occurring within the engine itself
   SJsErrorOutOfMemory = 'The Chakra engine has run out of memory';
@@ -646,6 +649,12 @@ begin
       Result := @SJsErrorModuleParsed;
     JsErrorModuleEvaluated:
       Result := @SJsErrorModuleEvaluated;
+    JsNoWeakRefRequired:
+      Result := @SJsNoWeakRefRequired;
+    JsErrorPromisePending:
+      Result := @SJsErrorPromisePending;
+    JsErrorModuleNotEvaluated:
+      Result := @SJsErrorModuleNotEvaluated;
     // JsErrorCategoryEngine
     JsErrorOutOfMemory:
       Result := @SJsErrorOutOfMemory;

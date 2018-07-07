@@ -31,6 +31,9 @@ SOFTWARE.
 {$endif}
 
 {$ifdef FPC}
+  {$ifdef UNIX}
+    {$define UseCThreads}
+  {$endif}
   {$define HAS_NATIVEUINT}
   {$define HAS_RAWBYTESTRING}
   {$define HAS_UINTPTR}

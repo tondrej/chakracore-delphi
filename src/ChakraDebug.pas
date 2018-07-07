@@ -371,7 +371,7 @@ type
   /// <remarks>
   ///     This API can be called when runtime is at a break or running.
   /// </remarks>
-  function JsDiagGetFunctionPosition(&function: JsValueRef; out functionPosition: JsValueRef): JsErrorCode;
+  function JsDiagGetFunctionPosition(_function: JsValueRef; out functionPosition: JsValueRef): JsErrorCode;
     {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 
   /// <summary>

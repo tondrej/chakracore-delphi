@@ -32,6 +32,9 @@ interface
 
 uses
   Classes, SysUtils,
+{$ifdef HAS_WIDESTRUTILS}
+  WideStrUtils,
+{$endif}
   Compat, ChakraCommon, ChakraCore;
 
 type
@@ -76,6 +79,9 @@ function JsTrueValue: JsValueRef;
 function StringToJsString(const S: UTF8String): JsValueRef; overload;
 function StringToJsString(const S: UnicodeString): JsValueRef; overload;
 
+function JsEscapeString(const S: UTF8String): UTF8String; overload;
+function JsEscapeString(const S: UnicodeString): UnicodeString; overload;
+
 function JsBooleanToBoolean(Value: JsValueRef): Boolean;
 function JsNumberToDouble(Value: JsValueRef): Double;
 function JsNumberToInt(Value: JsValueRef): Integer;
@@ -118,7 +124,9 @@ function JsGetProperty(Value, Prop: JsValueRef): JsValueRef; overload;
 function JsGetProperty(Value: JsValueRef; PropId: JsPropertyIdRef): JsValueRef; overload;
 function JsGetProperty(Value: JsValueRef; const PropName: UTF8String): JsValueRef; overload;
 function JsGetProperty(Value: JsValueRef; const PropName: UnicodeString): JsValueRef; overload;
-function JsTryGetProperty(Value, Prop: JsValueRef; out PropValue: JsValueRef): Boolean;
+function JsTryGetProperty(Value, Prop: JsValueRef; out PropValue: JsValueRef): Boolean; overload;
+function JsTryGetProperty(Value: JsValueRef; const PropName: UTF8String; out PropValue: JsValueRef): Boolean; overload;
+function JsTryGetProperty(Value: JsValueRef; const PropName: UnicodeString; out PropValue: JsValueRef): Boolean; overload;
 function JsHasException: Boolean;
 function JsHasExternalData(Value: JsValueRef): Boolean;
 function JsHasProperty(Value, Prop: JsValueRef): Boolean; overload;
@@ -328,6 +336,26 @@ begin
   ChakraCoreCheck(JsCreateStringUtf16(PUnicodeChar(S), Length(S), Result));
 end;
 
+function JsEscapeString(const S: UTF8String): UTF8String;
+begin
+  Result := UTF8Encode(JsEscapeString(UTF8Decode(S)));
+end;
+
+// TODO see https://mathiasbynens.be/notes/javascript-escapes
+function JsEscapeString(const S: UnicodeString): UnicodeString;
+begin
+  Result := S;
+  Result := WideStringReplace(Result, '\', '\\', [rfReplaceAll]);
+  Result := WideStringReplace(Result, #8, '\b', [rfReplaceAll]);
+  Result := WideStringReplace(Result, #9, '\t', [rfReplaceAll]);
+  Result := WideStringReplace(Result, #10, '\n', [rfReplaceAll]);
+  Result := WideStringReplace(Result, #11, '\v', [rfReplaceAll]);
+  Result := WideStringReplace(Result, #12, '\f', [rfReplaceAll]);
+  Result := WideStringReplace(Result, #13, '\r', [rfReplaceAll]);
+  Result := WideStringReplace(Result, '"', '\"', [rfReplaceAll]);
+  Result := WideStringReplace(Result, '''', '\''', [rfReplaceAll]);
+end;
+
 function JsBooleanToBoolean(Value: JsValueRef): Boolean;
 var
   B: ByteBool;
@@ -440,6 +468,11 @@ function JsInspect(const Name: UnicodeString; Value: JsValueRef): UnicodeString;
 begin
   Result := '';
   case JsGetValueType(Value) of
+    JsUndefined:
+      begin
+        AppendName;
+        Result := Result + '"undefined"';
+      end;
     JsFunction: ;
     JsSymbol: ;
     JsObject:
@@ -470,7 +503,7 @@ begin
     JsString:
       begin
         AppendName;
-        Result := Result + '"' + JsStringToUnicodeString(Value) + '"';
+        Result := Result + '"' + JsEscapeString(JsStringToUnicodeString(Value)) + '"';
       end
     else
     begin
@@ -842,6 +875,19 @@ begin
         (ChakraCommon.JsGetProperty(Value, PropId, PropValue) = JsNoError);
     end;
   end;
+end;
+
+function JsTryGetProperty(Value: JsValueRef; const PropName: UTF8String; out PropValue: JsValueRef): Boolean;
+var
+  PropId: JsPropertyIdRef;
+begin
+  Result := (JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId) = JsNoError) and
+    (ChakraCommon.JsGetProperty(Value, PropId, PropValue) = JsNoError);
+end;
+
+function JsTryGetProperty(Value: JsValueRef; const PropName: UnicodeString; out PropValue: JsValueRef): Boolean;
+begin
+  Result := JsTryGetProperty(Value, UTF8Encode(PropName), PropValue);
 end;
 
 function JsHasException: Boolean;

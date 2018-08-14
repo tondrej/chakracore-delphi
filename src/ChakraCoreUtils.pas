@@ -837,7 +837,7 @@ begin
         Result := JsGetProperty(Value, PropId)
       end;
     else
-      Result := JsGetProperty(Value, JsStringToUnicodeString(Prop));
+      Result := JsGetProperty(Value, JsStringToUTF8String(Prop));
   end;
 end;
 

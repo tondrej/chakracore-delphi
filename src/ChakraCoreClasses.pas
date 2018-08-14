@@ -1260,6 +1260,7 @@ begin
   ChakraCoreCheck(JsSetCurrentContext(Handle));
   ChakraCoreCheck(JsSetPromiseContinuationCallback(PromiseContinuation, Self));
   FProxyTargetSymbol := JsCreateSymbol('__proxy_target__');
+  ChakraCoreCheck(JsAddRef(FProxyTargetSymbol, nil));
   DoActivate;
 end;
 

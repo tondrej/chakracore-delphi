@@ -152,7 +152,7 @@ procedure TChakraCoreUtilsScripting.TestVersion;
 begin
   CheckEquals(Integer(1), CHAKRA_CORE_MAJOR_VERSION, 'major version number');
   CheckEquals(Integer(10), CHAKRA_CORE_MINOR_VERSION, 'minor version number');
-  CheckEquals(Integer(1), CHAKRA_CORE_PATCH_VERSION, 'patch version number');
+  CheckEquals(Integer(2), CHAKRA_CORE_PATCH_VERSION, 'patch version number');
 end;
 
 procedure TChakraCoreUtilsScripting.TestUndefined;

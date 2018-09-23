@@ -1222,6 +1222,9 @@ type
 
 implementation
 
+uses
+  Math;
+
 {$ifdef MSWINDOWS}
 const
   _chakracore = 'chakracore.dll';
@@ -1281,5 +1284,10 @@ const
   function JsGetProxyProperties; external _chakracore;
   function JsSerializeParserState; external _chakracore;
   function JsRunScriptWithParserState; external _chakracore;
+
+initialization
+  SetExceptionMask([exInvalidOp, exDenormalized, exZeroDivide, exOverflow, exUnderflow, exPrecision]);
+
+finalization
 
 end.

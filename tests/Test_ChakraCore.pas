@@ -95,6 +95,7 @@ type
     procedure TestCallFunction02;
     procedure TestCallFunctions;
     procedure TestCallNew;
+    procedure TestFPExceptions;
   end;
 
 implementation
@@ -847,6 +848,25 @@ begin
 
     CheckValueType(JsObject, Result, 'result type');
     Check(JsInstanceOf(Result, 'Object'), 'instanceof Object');
+  end;
+end;
+
+procedure TChakraCoreUtilsScripting.TestFPExceptions;
+const
+  SScript = 'var d = new Date(); this.Result = d.getTime();';
+  SName = 'TestFPExceptions.js';
+var
+  Unicode: Boolean;
+  Result: JsValueRef;
+begin
+  for Unicode := False to True do
+  begin
+    if Unicode then
+      Result := JsRunScript(UnicodeString(SScript), UnicodeString(SName))
+    else
+      Result := JsRunScript(UTF8String(SScript), UTF8String(SName));
+
+    CheckValueType(JsNumber, Result, 'result type');
   end;
 end;
 

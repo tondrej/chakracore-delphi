@@ -181,6 +181,8 @@ begin
   begin
     for I := 0 to ArgCount - 1 do
     begin
+      if S <> '' then
+        S := S + ' ';
       S := S + JsStringToUnicodeString(Arg^);
       Inc(Arg);
     end;

@@ -194,7 +194,7 @@ begin
           'o':
             S := S + JsInspect('', Arg^);
           's':
-            S := S + JsStringToUnicodeString(Arg^);
+            S := S + JsStringToUnicodeString(JsValueAsJsString(Arg^));
         end;
       end;
 
@@ -211,7 +211,7 @@ begin
     begin
       if S <> '' then
         S := S + ' ';
-      S := S + JsStringToUnicodeString(Arg^);
+      S := S + JsStringToUnicodeString(JsValueAsJsString(Arg^));
       Inc(Arg);
     end;
   end;

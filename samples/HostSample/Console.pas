@@ -192,7 +192,7 @@ begin
           'f':
             S := S + UnicodeString(FloatToStr(JsNumberToDouble(Arg^), DefaultFormatSettings));
           'o':
-            S := S + JsInspect('', Arg^);
+            S := S + JsInspect(Arg^);
           's':
             S := S + JsStringToUnicodeString(JsValueAsJsString(Arg^));
         end;

@@ -89,7 +89,8 @@ function JsStringToUnicodeString(Value: JsValueRef): UnicodeString;
 function JsStringToUTF8String(Value: JsValueRef): UTF8String;
 procedure JsEnumArray(Value: JsValueRef; EnumFunc: TJsEnumArrayFunc; Data: Pointer = nil);
 procedure JsEnumProperties(Value: JsValueRef; EnumFunc: TJsEnumPropertyFunc; Data: Pointer = nil);
-function JsInspect(const Name: UnicodeString; Value: JsValueRef): UnicodeString;
+
+function JsInspect(Value: JsValueRef): UnicodeString;
 function JsInspectArray(Value: JsValueRef): UnicodeString;
 function JsInspectObject(Value: JsValueRef): UnicodeString;
 
@@ -153,6 +154,12 @@ function JsCreateError(const AMessage: UnicodeString; ErrorType: TErrorType = et
 procedure JsThrowError(const AMessage: UTF8String; ErrorType: TErrorType = etGenericError); overload;
 procedure JsThrowError(const AMessage: UnicodeString; ErrorType: TErrorType = etGenericError); overload;
 procedure JsThrowError(Error: JsValueRef); overload;
+
+type
+  TJsInspectExceptionHandler = function (Value: JsValueRef; E: Exception): UnicodeString;
+
+var
+  JsInspectExceptionHandler: TJsInspectExceptionHandler = nil;
 
 implementation
 
@@ -293,7 +300,7 @@ begin
   if not Assigned(Error) then
     Exit;
 
-  raise Exception.Create(jsInspect('', Error));
+  raise Exception.Create(JsInspect(Error));
 end;
 
 function DoubleToJsNumber(Value: Double): JsValueRef;
@@ -459,56 +466,30 @@ begin
   end;
 end;
 
-function JsInspect(const Name: UnicodeString; Value: JsValueRef): UnicodeString;
-  procedure AppendName;
-  begin
-    if Name <> '' then
-      Result := Result + '"' + Name + '":';
-  end;
+function JsInspect(Value: JsValueRef): UnicodeString;
 begin
   Result := '';
-  case JsGetValueType(Value) of
-    JsUndefined:
-      begin
-        AppendName;
-        Result := Result + '"undefined"';
-      end;
-    JsFunction: ;
-    JsSymbol: ;
-    JsObject:
-      begin
-        AppendName;
-        Result := Result + '{' + JsInspectObject(Value) + '}';
-      end;
-    JsArray:
-      begin
-        AppendName;
-        Result := Result + '[' + JsInspectArray(Value) + ']';
-      end;
-    JsArrayBuffer:
-      begin
-        AppendName;
-        Result := Result + '{' + JsInspectObject(Value) + '}';
-      end;
-    JsTypedArray:
-      begin
-        AppendName;
-        Result := Result + '{' + JsInspectObject(Value) + '}';
-      end;
-    JsDataView:
-      begin
-        AppendName;
-        Result := Result + '{' + JsInspectObject(Value) + '}';
-      end;
-    JsString:
-      begin
-        AppendName;
-        Result := Result + '"' + JsEscapeString(JsStringToUnicodeString(Value)) + '"';
-      end
-    else
+  try
+    case JsGetValueType(Value) of
+      JsObject:
+        Result := '{' + JsInspectObject(Value) + '}';
+      JsArray:
+        Result := '[' + JsInspectArray(Value) + ']';
+      JsArrayBuffer:
+        Result := '{' + JsInspectObject(Value) + '}';
+      JsTypedArray:
+        Result := '{' + JsInspectObject(Value) + '}';
+      JsDataView:
+        Result := '{' + JsInspectObject(Value) + '}';
+      else
+        Result := '"' + JsEscapeString(JsStringToUnicodeString(JsValueAsJsString(Value))) + '"';
+    end;
+  except
+    on E: Exception do
     begin
-      AppendName;
-      Result := Result + JsStringToUnicodeString(Value);
+      if not Assigned(JsInspectExceptionHandler) then
+        raise;
+      Result := Result + '"' + JsEscapeString(JsInspectExceptionHandler(Value, E)) + '"';
     end;
   end;
 end;
@@ -520,7 +501,7 @@ begin
   Result := False;
   if Index > 0 then
     S^ := S^ + ',';
-  S^ := S^ + JsInspect('', ElementValue);
+  S^ := S^ + JsInspect(ElementValue);
 end;
 
 function JsInspectArray(Value: JsValueRef): UnicodeString;
@@ -535,13 +516,9 @@ var
   SValue: UnicodeString;
 begin
   Result := False;
-  SValue := JsInspect(PropName, PropValue);
-  if SValue <> '' then
-  begin
-    if S^ <> '' then
-      S^ := S^ + ',';
-    S^ := S^ + SValue;
-  end;
+  if S^ <> '' then
+    S^ := S^ + ',';
+  S^ := S^ + '"' + PropName + '":' + JsInspect(PropValue);
 end;
 
 function JsInspectObject(Value: JsValueRef): UnicodeString;

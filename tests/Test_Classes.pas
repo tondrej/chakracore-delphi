@@ -36,15 +36,23 @@ uses
 {$ifndef WINDOWS}
   cwstring,
 {$endif}
-  fpcunit, testutils, testregistry,
+  fpcunit, testregistry,
 {$else}
   TestFramework,
 {$endif}
-  Compat, ChakraCoreVersion, ChakraCommon, ChakraCore, ChakraCoreUtils, ChakraCoreClasses,
+  Compat, ChakraCommon, ChakraCore, ChakraCoreUtils, ChakraCoreClasses,
   Test_ChakraCore;
 
 type
+
+  { TChakraCoreContextTestCase }
+
   TChakraCoreContextTestCase = class(TBaseTestCase)
+  published
+    procedure TestScriptReferenceError;
+    procedure TestScriptSyntaxError;
+    procedure TestEvalReferenceError;
+    procedure TestEvalSyntaxError;
   end;
 
   { TNativeClassTestCase }
@@ -57,9 +65,137 @@ type
     procedure TestProjectedClass;
     procedure TestClassProjectedTwice;
     procedure TestClassProjectedInMultipleContexts;
+    procedure TestInheritance;
   end;
 
 implementation
+
+{ TChakraCoreContextTestCase }
+
+procedure TChakraCoreContextTestCase.TestScriptReferenceError;
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([]);
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    try
+      Context.RunScript('badref.bla();', 'TestScriptError.js');
+    except
+      on E: EChakraCoreScript do
+      begin
+        CheckEquals(0, E.Line, 'EChakraCoreScript.Line');
+        CheckEquals(0, E.Column, 'EChakraCoreScript.Column');
+        CheckEquals(UnicodeString(''), E.Source, 'EChakraCoreScript.Source');
+        CheckEquals(UnicodeString(''), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptException)) + sLineBreak +
+          'ReferenceError: ''badref'' is not defined', E.Message, 'EChakraCoreScript.Message');
+      end;
+    end;
+  finally
+    Context.Free;
+    Runtime.Free;
+  end;
+end;
+
+procedure TChakraCoreContextTestCase.TestScriptSyntaxError;
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([]);
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    try
+      Context.RunScript(
+        '// first line comment' + sLineBreak +
+        '   @ bad syntax',
+        'TestScriptError.js');
+    except
+      on E: EChakraCoreScript do
+      begin
+        CheckEquals(1, E.Line, 'EChakraCoreScript.Line');
+        CheckEquals(3, E.Column, 'EChakraCoreScript.Column');
+        CheckEquals(UnicodeString('   @ bad syntax'), E.Source, 'EChakraCoreScript.Source');
+        CheckEquals(UnicodeString('TestScriptError.js'), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptCompile)) + sLineBreak +
+          'SyntaxError: Invalid character', E.Message, 'EChakraCoreScript.Message');
+      end;
+    end;
+  finally
+    Context.Free;
+    Runtime.Free;
+  end;
+end;
+
+procedure TChakraCoreContextTestCase.TestEvalReferenceError;
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([]);
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    try
+      Context.RunScript('eval(''badref.bla();'');', 'TestScriptError.js');
+    except
+      on E: EChakraCoreScript do
+      begin
+        CheckEquals(0, E.Line, 'EChakraCoreScript.Line');
+        CheckEquals(0, E.Column, 'EChakraCoreScript.Column');
+        CheckEquals(UnicodeString(''), E.Source, 'EChakraCoreScript.Source');
+        CheckEquals(UnicodeString(''), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptException)) + sLineBreak +
+          'ReferenceError: ''badref'' is not defined', E.Message, 'EChakraCoreScript.Message');
+      end;
+    end;
+  finally
+    Context.Free;
+    Runtime.Free;
+  end;
+end;
+
+procedure TChakraCoreContextTestCase.TestEvalSyntaxError;
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([]);
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    try
+      Context.RunScript('eval(''@ bad syntax'');', 'TestScriptError.js');
+    except
+      on E: EChakraCoreScript do
+      begin
+        CheckEquals(0, E.Line, 'EChakraCoreScript.Line');
+        CheckEquals(0, E.Column, 'EChakraCoreScript.Column');
+        CheckEquals(UnicodeString(''), E.Source, 'EChakraCoreScript.Source');
+        CheckEquals(UnicodeString(''), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptException)) + sLineBreak +
+          'SyntaxError: Invalid character', E.Message, 'EChakraCoreScript.Message');
+      end;
+    end;
+  finally
+    Context.Free;
+    Runtime.Free;
+  end;
+end;
+
+{ TTestObject1 }
 
 type
   TTestObject1 = class(TNativeObject)
@@ -75,8 +211,6 @@ type
     class procedure RegisterMethods(AInstance: JsHandle); override;
   public
   end;
-
-{ TTestObject1 }
 
 function TTestObject1.GetProp1: JsValueRef;
 begin
@@ -132,7 +266,7 @@ begin
     Result := Context.RunScript('obj.method1(null, null);', 'TestMethod1.js');
     Check(TestObject.FMethod1Called, 'method1 called');
     CheckValueType(JsString, Result, 'method1 result type');
-    CheckEquals('Hello', JsStringToUnicodeString(Result), 'method1 result');
+    CheckEquals(UnicodeString('Hello'), JsStringToUnicodeString(Result), 'method1 result');
   finally
     TestObject.Free;
     Context.Free;
@@ -159,7 +293,7 @@ begin
     Result := Context.CallFunction('method1', [], TestObject.Instance);
     Check(TestObject.FMethod1Called, 'method1 called');
     CheckValueType(JsString, Result, 'method1 result type');
-    CheckEquals('Hello', JsStringToUnicodeString(Result), 'method1 result');
+    CheckEquals(UnicodeString('Hello'), JsStringToUnicodeString(Result), 'method1 result');
   finally
     TestObject.Free;
     Context.Free;
@@ -184,7 +318,7 @@ begin
     Context.Activate;
     TestObject := TTestObject1.Create;
     JsSetProperty(Context.Global, 'obj', TestObject.Instance);
-    Context.RunScript(WideFormat('obj.prop1 = ''%s'';', [SValue]), 'TestNamedProperty.js');
+    Context.RunScript(WideFormat('obj.prop1 = ''%s'';', [SValue]), UnicodeString('TestNamedProperty.js'));
     CheckEquals(SValue, TestObject.FProp1, 'prop1 value');
     CheckEquals(SValue, JsStringToUnicodeString(JsGetProperty(TestObject.Instance, 'prop1')), 'prop1 value');
   finally
@@ -196,7 +330,7 @@ end;
 
 procedure TNativeClassTestCase.TestProjectedClass;
 const
-  SScript = 'var obj = new TestObject(); var s1 = obj.method1(); obj.prop1 = s1; var s2 = obj.prop1;';
+  SScript: UnicodeString = 'var obj = new TestObject(); var s1 = obj.method1(); obj.prop1 = s1; var s2 = obj.prop1;';
 var
   Runtime: TChakraCoreRuntime;
   Context: TChakraCoreContext;
@@ -208,9 +342,9 @@ begin
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     TTestObject1.Project('TestObject');
-    Context.RunScript(SScript, 'TestProjectedClass.js');
-    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context.Global, 's1')), 's1');
-    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context.Global, 's2')), 's2');
+    Context.RunScript(SScript, UnicodeString('TestProjectedClass.js'));
+    CheckEquals(UnicodeString('Hello'), JsStringToUnicodeString(JsGetProperty(Context.Global, 's1')), 's1');
+    CheckEquals(UnicodeString('Hello'), JsStringToUnicodeString(JsGetProperty(Context.Global, 's2')), 's2');
   finally
     Context.Free;
     Runtime.Free;
@@ -225,7 +359,7 @@ end;
 
 procedure TNativeClassTestCase.TestClassProjectedInMultipleContexts;
 const
-  SScript = 'var obj = new TestObject(); var s1 = obj.method1(); obj.prop1 = s1; var s2 = obj.prop1;';
+  SScript: UnicodeString = 'var obj = new TestObject(); var s1 = obj.method1(); obj.prop1 = s1; var s2 = obj.prop1;';
 var
   Runtime: TChakraCoreRuntime;
   Context1, Context2: TChakraCoreContext;
@@ -240,15 +374,15 @@ begin
 
     Context1.Activate;
     TTestObject1.Project('TestObject');
-    Context1.RunScript(SScript, 'TestProjectedClass1.js');
-    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context1.Global, 's1')), 's1');
-    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context1.Global, 's2')), 's2');
+    Context1.RunScript(SScript, UnicodeString('TestProjectedClass1.js'));
+    CheckEquals(UnicodeString('Hello'), JsStringToUnicodeString(JsGetProperty(Context1.Global, 's1')), 's1');
+    CheckEquals(UnicodeString('Hello'), JsStringToUnicodeString(JsGetProperty(Context1.Global, 's2')), 's2');
 
     Context2.Activate;
     TTestObject1.Project('TestObject');
-    Context2.RunScript(SScript, 'TestProjectedClass2.js');
-    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context2.Global, 's1')), 's1');
-    CheckEquals('Hello', JsStringToUnicodeString(JsGetProperty(Context2.Global, 's2')), 's2');
+    Context2.RunScript(SScript, UnicodeString('TestProjectedClass2.js'));
+    CheckEquals(UnicodeString('Hello'), JsStringToUnicodeString(JsGetProperty(Context2.Global, 's1')), 's1');
+    CheckEquals(UnicodeString('Hello'), JsStringToUnicodeString(JsGetProperty(Context2.Global, 's2')), 's2');
   finally
     Context2.Free;
     Context1.Free;
@@ -256,12 +390,157 @@ begin
   end;
 end;
 
+{ TRectangle }
+
+type
+  TRectangle = class(TNativeObject)
+    class procedure InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word); override;
+    class function InitializePrototype(AConstructor: JsValueRef): JsValueRef; override;
+  end;
+
+class procedure TRectangle.InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word);
+var
+  ArgsArray: PJsValueRefArray absolute Args;
+  ShapeCtr: JsValueRef;
+begin
+  // Shape.call(x, y);
+  ShapeCtr := JsGetProperty(JsGlobal, 'Shape'); // TODO scope?
+  JsCallFunction(ShapeCtr, [AInstance, ArgsArray^[0], ArgsArray^[1]]);
+
+  // this.w = w;
+  JsSetProperty(AInstance, UnicodeString('w'), ArgsArray^[2]);
+  // this.h = h;
+  JsSetProperty(AInstance, UnicodeString('h'), ArgsArray^[3]);
+end;
+
+class function TRectangle.InitializePrototype(AConstructor: JsValueRef): JsValueRef;
+var
+  ShapeCtr, ShapePrototype: JsValueRef;
+begin
+  ShapeCtr := JsGetProperty(JsGlobal, 'Shape');
+  ShapePrototype := JsGetProperty(ShapeCtr, 'prototype');
+  // Rectangle.prototype = Object.create(Shape.prototype);
+  Result := JsCreateObject(ShapePrototype);
+end;
+
+procedure TNativeClassTestCase.TestInheritance;
+// same tests as in TChakraCorePrototypes.TestInheritance, against ChakraCoreClasses.TNativeObject implementation
+// - Shape (x, y) => Object
+//   - Circle (x, y, r) => Shape (x, y)
+//   - Rectangle (x, y, w, h) => Shape (x, y)
+//     - Square (x, y, w) => Rectangle (x, y, w, w)
+const
+  SScript =
+    // Shape: (Javascript) superclass
+    'function Shape(x, y) {'                                     + sLineBreak +
+    '  this.x = x;'                                              + sLineBreak +
+    '  this.y = y;'                                              + sLineBreak +
+    '}'                                                          + sLineBreak +
+                                                                   sLineBreak +
+    'Shape.prototype.move = function(x, y) {'                    + sLineBreak +
+    '  this.x += x;'                                             + sLineBreak +
+    '  this.y += y;'                                             + sLineBreak +
+    '};'                                                         + sLineBreak +
+                                                                   sLineBreak +
+    // Circle: (Javascript) subclass of (Javascript) Shape
+    'function Circle(x, y, r) {'                                 + sLineBreak +
+    '  Shape.call(this, x, y);'                                  + sLineBreak +
+    '  this.r = r;'                                              + sLineBreak +
+    '}'                                                          + sLineBreak +
+                                                                   sLineBreak +
+    'Circle.prototype = Object.create(Shape.prototype);'         + sLineBreak +
+    'Circle.prototype.constructor = Circle;'                     + sLineBreak +
+                                                                   sLineBreak +
+    // Square: (Javascript) subclass of (native) Rectangle
+    'function Square(x, y, w) {'                                 + sLineBreak +
+    '  Rectangle.call(this, x, y, w, w);'                        + sLineBreak +
+    '}'                                                          + sLineBreak +
+                                                                   sLineBreak +
+    'Square.prototype = Object.create(Rectangle.prototype);'     + sLineBreak +
+    'Square.prototype.constructor = Square;';
+  SName = 'TestInheritance.js';
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+  ShapeObj, CircleObj, RectangleObj, SquareObj: JsValueRef;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([]);
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    TRectangle.Project('Rectangle');
+
+    JsRunScript(SScript, SName);
+
+    // var shapeObj = new Shape(10, 10);
+    ShapeObj := JsNew('Shape', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(10)]);
+    CheckValueType(JsObject, ShapeObj, 'shapeObj value type');
+    CheckTrue(JsInstanceOf(ShapeObj, 'Shape'), 'shapeObj instanceof Shape');
+    CheckFalse(JsInstanceOf(ShapeObj, 'Circle'), 'shapeObj instanceof Circle');
+    CheckFalse(JsInstanceOf(ShapeObj, 'Rectangle'), 'shapeObj instanceof Rectangle');
+    CheckFalse(JsInstanceOf(ShapeObj, 'Square'), 'shapeObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(ShapeObj, 'x')), 'shapeObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(ShapeObj, 'y')), 'shapeObj.y before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], ShapeObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(ShapeObj, 'x')), 'shapeObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(ShapeObj, 'y')), 'shapeObj.y after move');
+
+    // var circleObj = new Circle(10, 10, 10);
+    CircleObj := JsNew('Circle', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(10)]);
+    CheckValueType(JsObject, CircleObj, 'circleObj value type');
+    CheckTrue(JsInstanceOf(CircleObj, 'Shape'), 'circleObj instanceof Shape');
+    CheckTrue(JsInstanceOf(CircleObj, 'Circle'), 'circleObj instanceof Circle');
+    CheckFalse(JsInstanceOf(CircleObj, 'Rectangle'), 'circleObj instanceof Rectangle');
+    CheckFalse(JsInstanceOf(CircleObj, 'Square'), 'circleObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'x')), 'circleObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'y')), 'circleObj.y before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], CircleObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(CircleObj, 'x')), 'circleObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(CircleObj, 'y')), 'circleObj.y after move');
+
+    // var rectangleObj = new Rectangle(10, 10, 60, 40);
+    RectangleObj := JsNew('Rectangle', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(60), IntToJsNumber(40)]);
+    CheckValueType(JsObject, RectangleObj, 'rectangleObj value type');
+    CheckTrue(JsInstanceOf(RectangleObj, 'Shape'), 'rectangleObj instanceof Shape');
+    CheckFalse(JsInstanceOf(RectangleObj, 'Circle'), 'rectangleObj instanceof Circle');
+    CheckTrue(JsInstanceOf(RectangleObj, 'Rectangle'), 'rectangleObj instanceof Rectangle');
+    CheckFalse(JsInstanceOf(RectangleObj, 'Square'), 'rectangleObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(RectangleObj, 'x')), 'rectangleObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(RectangleObj, 'y')), 'rectangleObj.y before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], RectangleObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(RectangleObj, 'x')), 'rectangleObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(RectangleObj, 'y')), 'rectangleObj.y after move');
+
+    // var squareObj = new Square(10, 10, 20);
+    SquareObj := JsNew('Square', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(20)]);
+    CheckValueType(JsObject, SquareObj, 'squareObj value type');
+    CheckTrue(JsInstanceOf(SquareObj, 'Shape'), 'squareObj instanceof Shape');
+    CheckFalse(JsInstanceOf(SquareObj, 'Circle'), 'squareObj instanceof Circle');
+    CheckTrue(JsInstanceOf(SquareObj, 'Rectangle'), 'squareObj instanceof Rectangle');
+    CheckTrue(JsInstanceOf(SquareObj, 'Square'), 'squareObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(SquareObj, 'x')), 'squareObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'sqaureObj.y before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], SquareObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'x')), 'squareObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'squareObj.y after move');
+  finally
+    Context.Free;
+    Runtime.Free;
+  end;
+end;
+
 initialization
 
 {$ifdef FPC}
-  RegisterTests([{TChakraCoreContextTestCase,} TNativeClassTestCase]);
+  RegisterTests([TChakraCoreContextTestCase, TNativeClassTestCase]);
 {$else}
-  RegisterTests([{TChakraCoreContextTestCase.Suite,} TNativeClassTestCase.Suite]);
+  RegisterTests([TChakraCoreContextTestCase.Suite, TNativeClassTestCase.Suite]);
 {$endif}
 
 end.

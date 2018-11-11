@@ -61,7 +61,11 @@ var
 begin
   Result := '';
 
+{$ifdef UNICODE}
   FileStream := TFileStream.Create(FileName, fmOpenRead);
+{$else}
+  FileStream := TFileStream.Create(UTF8Encode(FileName), fmOpenRead);
+{$endif}
   try
     if FileStream.Size = 0 then
       Exit;
@@ -95,7 +99,11 @@ begin
     JsSetCallback(Console, 'log', @Console_Log, nil);
     JsSetProperty(Context.Global, 'console', Console);
 
+{$ifdef UNICODE}
     Context.RunScript(LoadFile(ParamStr(1)), ExtractFileName(Paramstr(1)));
+{$else}
+    Context.RunScript(LoadFile(UTF8Decode(ParamStr(1))), ExtractFileName(UTF8Decode(Paramstr(1))));
+{$endif}
   finally
     Context.Free;
     Runtime.Free;

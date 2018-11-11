@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectGroup FileVersion="1">
+    <Targets Count="4">
+      <Target0 FileName="..\tests\ChakraCoreTests.lpi">
+        <BuildModes Count="2"/>
+        <Mode1 Name="Debug" Compile="True"/>
+        <Mode2 Name="Release"/>
+      </Target0>
+      <Target1 FileName="..\tests\ChakraCoreTestsUI.lpi">
+        <BuildModes Count="2"/>
+        <Mode1 Name="Debug" Compile="True"/>
+        <Mode2 Name="Release"/>
+      </Target1>
+      <Target2 FileName="SimpleHostSample\SimpleHost.lpi">
+        <BuildModes Count="2"/>
+        <Mode1 Name="Debug" Compile="True"/>
+        <Mode2 Name="Release"/>
+      </Target2>
+      <Target3 FileName="HostSample\ChakraCoreHostSample.lpi">
+        <BuildModes Count="2"/>
+        <Mode1 Name="Debug" Compile="True"/>
+        <Mode2 Name="Release"/>
+      </Target3>
+    </Targets>
+  </ProjectGroup>
+</CONFIG>

@@ -59,7 +59,8 @@ type
   TErrorType = (etGenericError, etRangeError, etReferenceError, etSyntaxError, etTypeError, etUriError);
 
   TJsEnumArrayFunc = function(Value: JsValueRef; Index: Integer; ElementValue: JsValueRef; Data: Pointer): Boolean;
-  TJsEnumPropertyFunc = function(Value: JsValueRef; const PropName: UnicodeString; PropValue: JsValueRef; Data: Pointer): Boolean;
+  TJsEnumPropertyFunc = function(Value: JsValueRef; const PropName: UnicodeString; PropValue: JsValueRef;
+    Data: Pointer): Boolean;
 
   PJsValueRefArray = ^TJsValueRefArray;
   TJsValueRefArray = array[0..255] of JsValueRef;
@@ -96,10 +97,15 @@ function JsInspectObject(Value: JsValueRef): UnicodeString;
 
 function JsContextOf(Instance: JsValueRef): JsContextRef;
 function JsGlobal: JsValueRef;
-function JsInstanceOf(Instance: JsValueRef; const ConstructorName: UnicodeString): Boolean; overload;
+function JsGetPrototype(Instance: JsValueRef): JsValueRef;
+function JsInstanceOf(Instance: JsValueRef; const ConstructorName: UnicodeString; Scope: JsValueRef = nil): Boolean;
+  overload;
 function JsInstanceOf(Instance, AConstructor: JsValueRef): Boolean; overload;
-function JsNew(const ConstructorName: UnicodeString; const Args: array of JsValueRef): JsValueRef; overload;
-function JsNew(AConstructor: JsValueRef; const Args: array of JsValueRef): JsValueRef; overload;
+function JsNew(const ConstructorName: UTF8String; const Args: array of JsValueRef; Scope: JsValueRef = nil): JsValueRef;
+    overload;
+function JsNew(const ConstructorName: UnicodeString; const Args: array of JsValueRef;
+  Scope: JsValueRef = nil): JsValueRef; overload;
+function JsNew(AConstructor, ACallee: JsValueRef; const Args: array of JsValueRef): JsValueRef; overload;
 
 function JsValueAsJsBoolean(Value: JsValueRef): JsValueRef;
 function JsValueAsJsNumber(Value: JsValueRef): JsValueRef;
@@ -109,7 +115,7 @@ function JsValueAsJsString(Value: JsValueRef): JsValueRef;
 function JsEqual(Value1, Value2: JsValueRef; AStrict: Boolean = False): Boolean;
 function JsGetErrorMessage(ErrorCode: JsErrorCode): PResStringRec;
 
-function JsCreateObject: JsValueRef;
+function JsCreateObject(APrototype: JsValueRef = nil): JsValueRef;
 function JsCreateSymbol(const Description: UnicodeString = ''): JsValueRef;
 function JsCreateNativeTypedArray(AType: JsTypedArrayType; ALength: Integer): JsValueRef;
 
@@ -119,41 +125,62 @@ function JsGetValueType(Value: JsValueRef): JsValueType;
 function JsGetTypedArrayType(Value: JsValueRef): JsTypedArrayType;
 function JsCallFunction(Func: JsValueRef; Args: PJsValueRef; ArgCount: Word): JsValueRef; overload;
 function JsCallFunction(Func: JsValueRef; const Args: array of JsValueRef): JsValueRef; overload;
-function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef; Instance: JsValueRef = nil): JsValueRef; overload;
-function JsCallFunction(const FunctionName: UnicodeString; const Args: array of JsValueRef; Instance: JsValueRef = nil): JsValueRef; overload;
+function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef;
+  Scope: JsValueRef = nil): JsValueRef; overload;
+function JsCallFunction(const FunctionName: UnicodeString; const Args: array of JsValueRef;
+  Scope: JsValueRef = nil): JsValueRef; overload;
 function JsGetProperty(Value, Prop: JsValueRef): JsValueRef; overload;
 function JsGetProperty(Value: JsValueRef; PropId: JsPropertyIdRef): JsValueRef; overload;
 function JsGetProperty(Value: JsValueRef; const PropName: UTF8String): JsValueRef; overload;
 function JsGetProperty(Value: JsValueRef; const PropName: UnicodeString): JsValueRef; overload;
 function JsTryGetProperty(Value, Prop: JsValueRef; out PropValue: JsValueRef): Boolean; overload;
 function JsTryGetProperty(Value: JsValueRef; const PropName: UTF8String; out PropValue: JsValueRef): Boolean; overload;
-function JsTryGetProperty(Value: JsValueRef; const PropName: UnicodeString; out PropValue: JsValueRef): Boolean; overload;
+function JsTryGetProperty(Value: JsValueRef; const PropName: UnicodeString; out PropValue: JsValueRef): Boolean;
+  overload;
 function JsHasException: Boolean;
 function JsHasExternalData(Value: JsValueRef): Boolean;
 function JsHasProperty(Value, Prop: JsValueRef): Boolean; overload;
 function JsHasProperty(Value: JsValueRef; const PropId: JsPropertyIdRef): Boolean; overload;
 function JsHasProperty(Value: JsValueRef; const PropName: UTF8String): Boolean; overload;
 function JsHasProperty(Value: JsValueRef; const PropName: UnicodeString): Boolean; overload;
-function JsRunScript(const Script, Name: UTF8String; SourceContext: NativeUInt = 0): JsValueRef; overload;
-function JsRunScript(const Script, Name: UnicodeString; SourceContext: NativeUInt = 0): JsValueRef; overload;
-function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UTF8String = '';
+function JsCreatePropertyDescriptor(Configurable, Enumerable: Boolean; GetAccessor, SetAccessor: JsValueRef;
   UseStrictRules: Boolean = True): JsValueRef; overload;
-function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UnicodeString = '';
-  UseStrictRules: Boolean = True): JsValueRef; overload;
+function JsDefineProperty(PropId: JsPropertyIdRef; Configurable, Enumerable: Boolean;
+  GetAccessor, SetAccessor: JsValueRef; Scope: JsValueRef = nil; UseStrictRules: Boolean = True): Boolean; overload;
+function JsDefineProperty(const PropName: UTF8String; Configurable, Enumerable: Boolean;
+  GetAccessor, SetAccessor: JsValueRef; Scope: JsValueRef = nil; UseStrictRules: Boolean = True): Boolean; overload;
+function JsDefineProperty(const PropName: UnicodeString; Configurable, Enumerable: Boolean;
+  GetAccessor, SetAccessor: JsValueRef; Scope: JsValueRef = nil; UseStrictRules: Boolean = True): Boolean; overload;
+
+function JsRunScript(const Script, Name: UTF8String; SourceContext: NativeUInt = 0;
+  IsLibraryCode: Boolean = False): JsValueRef; overload;
+function JsRunScript(const Script, Name: UnicodeString; SourceContext: NativeUInt = 0;
+  IsLibraryCode: Boolean = False): JsValueRef; overload;
+function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UTF8String = ''): JsValueRef;
+  overload;
+function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer;
+  const Name: UnicodeString = ''): JsValueRef; overload;
 procedure JsCreatePromise(out Promise, ResolveFunc, RejectFunc: JsValueRef);
 function JsSetCallback(Instance: JsValueRef; const CallbackName: UTF8String; Callback: JsNativeFunction;
   CallbackState: Pointer; UseStrictRules: Boolean = True): JsValueRef; overload;
 function JsSetCallback(Instance: JsValueRef; const CallbackName: UnicodeString; Callback: JsNativeFunction;
   CallbackState: Pointer; UseStrictRules: Boolean = True): JsValueRef; overload;
 procedure JsSetProperty(Instance, Prop, Value: JsValueRef; UseStrictRules: Boolean = True); overload;
-procedure JsSetProperty(Instance: JsValueRef; PropId: JsPropertyIdRef; Value: JsValueRef; UseStrictRules: Boolean = True); overload;
-procedure JsSetProperty(Instance: JsValueRef; const PropName: UTF8String; Value: JsValueRef; UseStrictRules: Boolean = True); overload;
-procedure JsSetProperty(Instance: JsValueRef; const PropName: UnicodeString; Value: JsValueRef; UseStrictRules: Boolean = True); overload;
+procedure JsSetProperty(Instance: JsValueRef; PropId: JsPropertyIdRef; Value: JsValueRef;
+  UseStrictRules: Boolean = True); overload;
+procedure JsSetProperty(Instance: JsValueRef; const PropName: UTF8String; Value: JsValueRef;
+  UseStrictRules: Boolean = True); overload;
+procedure JsSetProperty(Instance: JsValueRef; const PropName: UnicodeString; Value: JsValueRef;
+  UseStrictRules: Boolean = True); overload;
 function JsCreateError(const AMessage: UTF8String; ErrorType: TErrorType = etGenericError): JsValueRef; overload;
 function JsCreateError(const AMessage: UnicodeString; ErrorType: TErrorType = etGenericError): JsValueRef; overload;
 procedure JsThrowError(const AMessage: UTF8String; ErrorType: TErrorType = etGenericError); overload;
 procedure JsThrowError(const AMessage: UnicodeString; ErrorType: TErrorType = etGenericError); overload;
 procedure JsThrowError(Error: JsValueRef); overload;
+
+function JsGetCurrentContext: JsContextRef;
+function JsGetCurrentRuntime: JsRuntimeHandle;
+function JsIsDebugging: Boolean;
 
 type
   TJsInspectExceptionHandler = function (Value: JsValueRef; E: Exception): UnicodeString;
@@ -164,7 +191,7 @@ var
 implementation
 
 uses
-  ChakraCoreClasses;
+  ChakraDebug, ChakraCoreClasses;
 
 resourcestring
   // Category of errors that relates to incorrect usage of the API itself
@@ -241,30 +268,28 @@ end;
 
 constructor EChakraCoreScript.Create(AErrorCode: JsErrorCode);
 var
-{$ifndef WINDOWS}
-  MetaData: JsValueRef;
-{$endif}
+  PropValue: JsValueRef;
   SException: UnicodeString;
 begin
-// TODO On Windows, if the error comes from eval(), JsGetAndClearExceptionWithMetadata raises a null-pointer access violation in chakracore.dll
-// On Linux, metadata is empty?
-{$ifdef WINDOWS}
-  if JsGetAndClearException(Error) = JsNoError then
-  begin
-{$else}
-  if JsGetAndClearExceptionWithMetadata(MetaData) = JsNoError then
-  begin
-    Line := JsNumberToInt(JsGetProperty(MetaData, 'line'));
-    Column := JsNumberToInt(JsGetProperty(MetaData, 'column'));
-    Source := JsStringToUnicodeString(JsGetProperty(MetaData, 'source'));
-    ScriptURL := JsStringToUnicodeString(JsGetProperty(MetaData, 'url'));
-    Error := JsGetProperty(MetaData, 'exception');
-{$endif}
-    inherited Create(AErrorCode, Error);
+  SException := '';
+  JsGetAndClearException(Error);
+  if JsTryGetProperty(Error, 'line', PropValue) and (JsGetValueType(PropValue) = JsNumber) then
+    Line := JsNumberToInt(PropValue);
+  if JsTryGetProperty(Error, 'column', PropValue) and (JsGetValueType(PropValue) = JsNumber) then
+    Column := JsNumberToInt(PropValue);
+  if JsTryGetProperty(Error, 'source', PropValue) and (JsGetValueType(PropValue) = JsString) then
+    Source := JsStringToUnicodeString(PropValue);
+  if JsTryGetProperty(Error, 'url', PropValue) and (JsGetValueType(PropValue) = JsString) then
+    ScriptURL := JsStringToUnicodeString(PropValue);
+  inherited Create(AErrorCode, Error);
+  if Assigned(Error) then
     SException := JsStringToUnicodeString(Error);
-    if SException <> '' then
-      Message := Message + sLinebreak + SException;
-  end;
+  if SException <> '' then
+{$ifdef UNICODE}
+    Message := Message + sLineBreak + SException;
+{$else}
+    Message := Message + sLineBreak + UTF8Encode(SException);
+{$endif}
 end;
 
 function BooleanToJsBoolean(Value: Boolean): JsValueRef;
@@ -300,7 +325,11 @@ begin
   if not Assigned(Error) then
     Exit;
 
+{$ifdef UNICODE}
   raise Exception.Create(JsInspect(Error));
+{$else}
+  raise Exception.Create(UTF8Encode(JsInspect(Error)));
+{$endif}
 end;
 
 function DoubleToJsNumber(Value: Double): JsValueRef;
@@ -345,7 +374,7 @@ end;
 
 function JsEscapeString(const S: UTF8String): UTF8String;
 begin
-  Result := UTF8Encode(JsEscapeString(UTF8Decode(S)));
+  Result := UTF8Encode(JsEscapeString(UTF8ToString(S)));
 end;
 
 // TODO see https://mathiasbynens.be/notes/javascript-escapes
@@ -513,7 +542,6 @@ end;
 function _JsInspectObjectProperty(Instance: JsValueRef; const PropName: UnicodeString; PropValue: JsValueRef; Data: Pointer): Boolean;
 var
   S: PUnicodeString absolute data;
-  SValue: UnicodeString;
 begin
   Result := False;
   if S^ <> '' then
@@ -537,9 +565,16 @@ begin
   ChakraCoreCheck(JsGetGlobalObject(Result));
 end;
 
-function JsInstanceOf(Instance: JsValueRef; const ConstructorName: UnicodeString): Boolean;
+function JsGetPrototype(Instance: JsValueRef): JsValueRef;
 begin
-  Result := JsInstanceOf(Instance, JsGetProperty(JsGlobal, ConstructorName));
+  ChakraCoreCheck(ChakraCommon.JsGetPrototype(Instance, Result));
+end;
+
+function JsInstanceOf(Instance: JsValueRef; const ConstructorName: UnicodeString; Scope: JsValueRef): Boolean;
+begin
+  if not Assigned(Scope) then
+    Scope := JsGlobal;
+  Result := JsInstanceOf(Instance, JsGetProperty(Scope, ConstructorName));
 end;
 
 function JsInstanceOf(Instance, AConstructor: JsValueRef): Boolean;
@@ -550,21 +585,37 @@ begin
   Result := B;
 end;
 
-function JsNew(const ConstructorName: UnicodeString; const Args: array of JsValueRef): JsValueRef;
+function JsNew(const ConstructorName: UTF8String; const Args: array of JsValueRef; Scope: JsValueRef): JsValueRef;
+var
+  AConstructor: JsValueRef;
 begin
-  Result := JsNew(JsGetProperty(JsGlobal, ConstructorName), Args);
+  if not Assigned(Scope) then
+    Scope := JsGlobal;
+  AConstructor := JsGetProperty(Scope, ConstructorName);
+  Result := JsNew(AConstructor, AConstructor, Args);
 end;
 
-function JsNew(AConstructor: JsValueRef; const Args: array of JsValueRef): JsValueRef;
+function JsNew(const ConstructorName: UnicodeString; const Args: array of JsValueRef; Scope: JsValueRef): JsValueRef;
 var
-  PArg: PJsValueRef;
-  Len: Integer;
+  AConstructor: JsValueRef;
 begin
-  PArg := nil;
-  Len := Length(Args);
-  if Len > 0 then
-    PArg := @Args[0];
-  ChakraCoreCheck(ChakraCommon.JsConstructObject(AConstructor, PArg, Len, Result));
+  if not Assigned(Scope) then
+    Scope := JsGlobal;
+  AConstructor := JsGetProperty(Scope, ConstructorName);
+  Result := JsNew(AConstructor, AConstructor, Args);
+end;
+
+function JsNew(AConstructor, ACallee: JsValueRef; const Args: array of JsValueRef): JsValueRef;
+var
+  NewArgs: JsValueRefArray;
+  L: Integer;
+begin
+  // pass callee + args
+  L := Length(Args);
+  SetLength(NewArgs, L + 1);
+  NewArgs[0] := ACallee;
+  Move(Args[0], NewArgs[1], L * SizeOf(JsValueRef));
+  ChakraCoreCheck(ChakraCommon.JsConstructObject(AConstructor, @NewArgs[0], L + 1, Result));
 end;
 
 function JsValueAsJsBoolean(Value: JsValueRef): JsValueRef;
@@ -702,9 +753,12 @@ begin
   end;
 end;
 
-function JsCreateObject: JsValueRef;
+function JsCreateObject(APrototype: JsValueRef): JsValueRef;
 begin
-  ChakraCoreCheck(ChakraCommon.JsCreateObject(Result));
+  if Assigned(APrototype) then // Object.create(prototype)
+    Result := JsCallFunction('create', [APrototype], JsGetProperty(JsGlobal, 'Object'))
+  else
+    ChakraCoreCheck(ChakraCommon.JsCreateObject(Result));
 end;
 
 function JsCreateSymbol(const Description: UnicodeString): JsValueRef;
@@ -733,24 +787,12 @@ begin
 end;
 
 function JsGetExternalData(Value: JsValueRef): Pointer;
-var
-  Context: TChakraCoreContext;
-  Target: JsValueRef;
 begin
-  if not JsHasExternalData(Value) and (JsGetContextData(JsContextOf(Value), Pointer(Context)) = JsNoError) and
-    JsTryGetProperty(Value, Context.ProxyTargetSymbol, Target) then // proxy
-    Value := Target;
   ChakraCoreCheck(ChakraCommon.JsGetExternalData(Value, Result));
 end;
 
 procedure JsSetExternalData(Value: JsValueRef; Data: Pointer);
-var
-  Context: TChakraCoreContext;
-  Target: JsValueRef;
 begin
-  if not JsHasExternalData(Value) and (JsGetContextData(JsContextOf(Value), Pointer(Context)) = JsNoError) and
-    JsTryGetProperty(Value, Context.ProxyTargetSymbol, Target) then // proxy
-    Value := Target;
   ChakraCoreCheck(ChakraCommon.JsSetExternalData(Value, Data));
 end;
 
@@ -781,26 +823,27 @@ begin
   Result := JsCallFunction(Func, PArg, Len);
 end;
 
-function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef; Instance: JsValueRef): JsValueRef;
+function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef; Scope: JsValueRef): JsValueRef;
 var
   L: Integer;
   Func: JsValueRef;
   NewArgs: array of JsValueRef;
 begin
-  if not Assigned(Instance) then
-    Instance := JsGlobal;
-  Func := JsGetProperty(Instance, FunctionName);
+  if not Assigned(Scope) then
+    Scope := JsGlobal;
+  Func := JsGetProperty(Scope, FunctionName);
   L := Length(Args);
   SetLength(NewArgs, L + 1);
-  NewArgs[0] := Instance;
+  NewArgs[0] := Scope;
   if L > 0 then
     Move(Args[0], NewArgs[1], L * SizeOf(JsValueRef));
   Result := JsCallFunction(Func, NewArgs);
 end;
 
-function JsCallFunction(const FunctionName: UnicodeString; const Args: array of JsValueRef; Instance: JsValueRef): JsValueRef;
+function JsCallFunction(const FunctionName: UnicodeString; const Args: array of JsValueRef;
+  Scope: JsValueRef): JsValueRef;
 begin
-  Result := JsCallFunction(UTF8Encode(FunctionName), Args, Instance);
+  Result := JsCallFunction(UTF8Encode(FunctionName), Args, Scope);
 end;
 
 function JsGetProperty(Value, Prop: JsValueRef): JsValueRef;
@@ -919,27 +962,68 @@ begin
   Result := JsHasProperty(Value, UTF8Encode(PropName));
 end;
 
-function JsRunScript(const Script, Name: UTF8String; SourceContext: NativeUInt): JsValueRef;
+function JsCreatePropertyDescriptor(Configurable, Enumerable: Boolean; GetAccessor, SetAccessor: JsValueRef;
+  UseStrictRules: Boolean): JsValueRef;
+begin
+  Result := JsCreateObject;
+  JsSetProperty(Result, 'configurable', BooleanToJsBoolean(Configurable), True);
+  JsSetProperty(Result, 'enumerable', BooleanToJsBoolean(Enumerable), True);
+  if Assigned(GetAccessor) and (JsGetValueType(GetAccessor) = JsFunction) then
+    JsSetProperty(Result, 'get', GetAccessor, UseStrictRules);
+  if Assigned(SetAccessor) and (JsGetValueType(SetAccessor) = JsFunction) then
+    JsSetProperty(Result, 'set', SetAccessor, UseStrictRules);
+end;
+
+function JsDefineProperty(PropId: JsPropertyIdRef; Configurable, Enumerable: Boolean;
+  GetAccessor, SetAccessor: JsValueRef; Scope: JsValueRef; UseStrictRules: Boolean): Boolean;
+begin
+  if not Assigned(Scope) then
+    Scope := JsGlobal;
+  ChakraCoreCheck(ChakraCommon.JsDefineProperty(Scope, PropId, JsCreatePropertyDescriptor(Configurable, Enumerable,
+    GetAccessor, SetAccessor, UseStrictRules), ByteBool(Result)));
+end;
+
+function JsDefineProperty(const PropName: UTF8String; Configurable, Enumerable: Boolean;
+  GetAccessor, SetAccessor: JsValueRef; Scope: JsValueRef; UseStrictRules: Boolean): Boolean;
+var
+  PropId: JsPropertyIdRef;
+begin
+  ChakraCoreCheck(JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId));
+  Result := JsDefineProperty(PropId, Configurable, Enumerable, GetAccessor, SetAccessor, Scope, UseStrictRules);
+end;
+
+function JsDefineProperty(const PropName: UnicodeString; Configurable, Enumerable: Boolean;
+  GetAccessor, SetAccessor: JsValueRef; Scope: JsValueRef; UseStrictRules: Boolean): Boolean;
+begin
+  Result := JsDefineProperty(UTF8Encode(PropName), Configurable, Enumerable, GetAccessor, SetAccessor, Scope,
+    UseStrictRules);
+end;
+
+function JsRunScript(const Script, Name: UTF8String; SourceContext: NativeUInt; IsLibraryCode: Boolean): JsValueRef;
+const
+  ParseScriptAttributes: array[Boolean] of JsParseScriptAttributes = ([], [JsParseScriptAttributeLibraryCode]);
 var
   ScriptName, ScriptSource: JsValueRef;
 begin
   ScriptName := StringToJsString(Name);
   ChakraCoreCheck(JsCreateExternalArrayBuffer(Pointer(Script), Length(Script), nil, nil, ScriptSource));
-  ChakraCoreCheck(JsRun(ScriptSource, SourceContext, ScriptName, JsParseScriptAttributeNone, Result));
+  ChakraCoreCheck(JsRun(ScriptSource, SourceContext, ScriptName, ParseScriptAttributes[IsLibraryCode], Result));
 end;
 
-function JsRunScript(const Script, Name: UnicodeString; SourceContext: NativeUInt): JsValueRef;
+function JsRunScript(const Script, Name: UnicodeString; SourceContext: NativeUInt; IsLibraryCode: Boolean): JsValueRef;
+const
+  ParseScriptAttributes: array[Boolean] of JsParseScriptAttributes = ([JsParseScriptAttributeArrayBufferIsUtf16Encoded],
+    [JsParseScriptAttributeLibraryCode, JsParseScriptAttributeArrayBufferIsUtf16Encoded]);
 var
   ScriptName, ScriptSource: JsValueRef;
 begin
   ScriptName := StringToJsString(Name);
-  ChakraCoreCheck(JsCreateExternalArrayBuffer(Pointer(PUnicodeChar(Script)), (Length(Script)) * SizeOf(UnicodeChar), nil,
-    nil, ScriptSource));
-  ChakraCoreCheck(JsRun(ScriptSource, SourceContext, ScriptName, JsParseScriptAttributeArrayBufferIsUtf16Encoded, Result));
+  ChakraCoreCheck(JsCreateExternalArrayBuffer(Pointer(PUnicodeChar(Script)), (Length(Script)) * SizeOf(UnicodeChar),
+    nil, nil, ScriptSource));
+  ChakraCoreCheck(JsRun(ScriptSource, SourceContext, ScriptName, ParseScriptAttributes[IsLibraryCode], Result));
 end;
 
-function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UTF8String;
-  UseStrictRules: Boolean): JsValueRef;
+function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UTF8String): JsValueRef;
 begin
   if Name = '' then
     ChakraCoreCheck(ChakraCommon.JsCreateFunction(Callback, CallbackState, Result))
@@ -947,8 +1031,7 @@ begin
     ChakraCoreCheck(ChakraCommon.JsCreateNamedFunction(StringToJsString(Name), Callback, CallbackState, Result));
 end;
 
-function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UnicodeString;
-  UseStrictRules: Boolean): JsValueRef;
+function JsCreateFunction(Callback: JsNativeFunction; CallbackState: Pointer; const Name: UnicodeString): JsValueRef;
 begin
   if Name = '' then
     ChakraCoreCheck(ChakraCommon.JsCreateFunction(Callback, CallbackState, Result))
@@ -964,7 +1047,7 @@ end;
 function JsSetCallback(Instance: JsValueRef; const CallbackName: UTF8String; Callback: JsNativeFunction;
   CallbackState: Pointer; UseStrictRules: Boolean): JsValueRef;
 begin
-  Result := JsCreateFunction(Callback, CallbackState, CallbackName, UseStrictRules);
+  Result := JsCreateFunction(Callback, CallbackState, CallbackName);
   JsSetProperty(Instance, CallbackName, Result, UseStrictRules);
 end;
 
@@ -1002,7 +1085,8 @@ begin
   JsSetProperty(Instance, PropId, Value, UseStrictRules);
 end;
 
-procedure JsSetProperty(Instance: JsValueRef; const PropName: UnicodeString; Value: JsValueRef; UseStrictRules: Boolean);
+procedure JsSetProperty(Instance: JsValueRef; const PropName: UnicodeString; Value: JsValueRef;
+  UseStrictRules: Boolean);
 begin
   JsSetProperty(Instance, UTF8Encode(PropName), Value, UseStrictRules);
 end;
@@ -1040,6 +1124,23 @@ end;
 procedure JsThrowError(Error: JsValueRef);
 begin
   ChakraCoreCheck(JsSetException(Error));
+end;
+
+function JsGetCurrentContext: JsContextRef;
+begin
+  ChakraCoreCheck(ChakraCommon.JsGetCurrentContext(Result));
+end;
+
+function JsGetCurrentRuntime: JsRuntimeHandle;
+begin
+  ChakraCoreCheck(ChakraCommon.JsGetRuntime(JsGetCurrentContext, Result));
+end;
+
+function JsIsDebugging: Boolean;
+var
+  DiagAttributes: JsDiagBreakOnExceptionAttributes;
+begin
+  Result := JsDiagGetBreakOnException(JsGetCurrentRuntime, DiagAttributes) <> JsErrorDiagNotInDebugMode;
 end;
 
 end.

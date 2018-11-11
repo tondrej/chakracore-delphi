@@ -32,6 +32,7 @@ interface
 
 {$ifdef FPC}
   {$macro ON}
+  {$warn SYMBOL_PLATFORM OFF}
 {$endif}
 
 uses

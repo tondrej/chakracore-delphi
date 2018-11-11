@@ -36,13 +36,16 @@ uses
 {$ifndef WINDOWS}
   cwstring,
 {$endif}
-  fpcunit, testutils, testregistry,
+  fpcunit, testregistry,
 {$else}
   TestFramework,
 {$endif}
-  Compat, ChakraCoreVersion, ChakraCommon, ChakraCore, ChakraCoreUtils;
+  Compat, ChakraCoreVersion, ChakraCommon, ChakraCore, ChakraDebug, ChakraCoreUtils;
 
 type
+
+  { TBaseTestCase }
+
   TBaseTestCase = class(TTestCase)
   public
 {$ifdef DELPHI}
@@ -96,11 +99,22 @@ type
     procedure TestCallFunctions;
     procedure TestCallNew;
     procedure TestFPExceptions;
+    procedure TestDebugging;
+  end;
+
+  { TChakraCorePrototypes }
+
+  TChakraCorePrototypes = class(TChakraCoreTestCase)
+  published
+    procedure TestInheritance;
   end;
 
 implementation
 
 uses
+{$ifdef HAS_WIDESTRUTILS}
+  WideStrUtils,
+{$endif}
   Math;
 
 {$ifdef DELPHI}
@@ -685,15 +699,15 @@ begin
         Name := JsGetProperty(E.Error, 'name');
         Message := JsGetProperty(E.Error, 'message');
 
-        CheckEquals('SyntaxError', JsStringToUnicodeString(Name));
-        CheckEquals('Expected '';''', JsStringToUnicodeString(Message));
+        CheckEquals(UnicodeString('SyntaxError'), JsStringToUnicodeString(Name));
+        CheckEquals(UnicodeString('Expected '';'''), JsStringToUnicodeString(Message));
       end;
     end;
   end;
 end;
 
 const
-  ErrorTypeNames: array[TErrorType] of string = ('Error', 'RangeError', 'ReferenceError', 'SyntaxError', 'TypeError', 'URIError');
+  ErrorTypeNames: array[TErrorType] of UnicodeString = ('Error', 'RangeError', 'ReferenceError', 'SyntaxError', 'TypeError', 'URIError');
 
 type
   PErrorType = ^TErrorType;
@@ -739,7 +753,7 @@ begin
           Message := JsGetProperty(E.Error, 'message');
 
           CheckEquals(ErrorTypeNames[EType], JsStringToUnicodeString(Name));
-          CheckEquals(Format('Test %s error', [ErrorTypeNames[EType]]), JsStringToUnicodeString(Message));
+          CheckEquals(WideFormat('Test %s error', [ErrorTypeNames[EType]]), JsStringToUnicodeString(Message));
         end;
       end;
     end;
@@ -870,11 +884,207 @@ begin
   end;
 end;
 
+function DebugCallback(debugEvent: JsDiagDebugEvent; eventData: JsValueRef; callbackState: Pointer): JsErrorCode;
+  {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+begin
+  Result := JsNoError;
+end;
+
+procedure TChakraCoreUtilsScripting.TestDebugging;
+var
+  Dummy: Pointer;
+begin
+  Check(not JsIsDebugging, 'is debugging');
+  ChakraCoreCheck(JsDiagStartDebugging(FRuntime, DebugCallback, nil));
+  try
+    Check(JsIsDebugging, 'is debugging');
+  finally
+    ChakraCoreCheck(JsDiagStopDebugging(FRuntime, @Dummy));
+  end;
+  Check(not JsIsDebugging, 'is debugging');
+end;
+
+{ TChakraCorePrototypes }
+
+var
+  RectangleConstructor: JsValueRef = nil;
+  RectanglePrototype: JsValueref = nil;
+
+function Rectangle_ConstructorCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRef; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  TestCase: TChakraCorePrototypes absolute CallbackState;
+  ArgsArray: PJsValueRefArray absolute Args;
+  ShapeCtr: JsValueRef;
+begin
+  Result := JsUndefinedValue;
+
+  try
+    TestCase.CheckValueType(JsFunction, Callee, 'Rectangle constructor value type');
+    TestCase.CheckEquals(5, Integer(ArgCount), 'Rectangle constructor argument count');
+    ShapeCtr := JsGetProperty(JsGlobal, 'Shape');
+
+    if IsConstructCall then
+      ChakraCoreCheck(JsCreateExternalObjectWithPrototype(CallbackState, nil, RectanglePrototype, Result))
+    else
+      Result := ArgsArray^[0];
+
+    // Shape.call(x, y);
+    JsCallFunction(ShapeCtr, [Result, ArgsArray^[1], ArgsArray^[2]]);
+
+    // this.w = w;
+    JsSetProperty(Result, UnicodeString('w'), ArgsArray^[3]);
+    // this.h = h;
+    JsSetProperty(Result, UnicodeString('h'), ArgsArray^[4]);
+  except on E: Exception do
+    JsThrowError(Format('[%s] %s', [E.ClassName, E.Message]));
+  end;
+end;
+
+function Global_GetRectangleCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRef; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  ShapeCtr, ShapePrototype: JsValueRef;
+begin
+  Result := JsUndefinedValue;
+  try
+    if not Assigned(RectangleConstructor) then
+    begin
+      ChakraCoreCheck(JsCreateNamedFunction(StringToJsString('Rectangle'), Rectangle_ConstructorCallback, CallbackState,
+        RectangleConstructor));
+    end;
+
+    if not Assigned(RectanglePrototype) then
+    begin
+      ShapeCtr := JsGetProperty(JsGlobal, 'Shape');
+      ShapePrototype := JsGetProperty(ShapeCtr, 'prototype');
+      // Rectangle.prototype = Object.create(Shape.prototype);
+      RectanglePrototype := JsCreateObject(ShapePrototype);
+      JsSetProperty(RectangleConstructor, 'prototype', RectanglePrototype);
+
+      // Rectangle.prototype.constructor = Rectangle;
+      JsSetProperty(RectanglePrototype, 'constructor', RectangleConstructor);
+    end;
+
+    Result := RectangleConstructor;
+  except
+    on E: Exception do
+      JsThrowError(Format('[%s] %s', [E.ClassName, E.Message]));
+  end;
+end;
+
+procedure TChakraCorePrototypes.TestInheritance;
+// - Shape (x, y) => Object
+//   - Circle (x, y, r) => Shape (x, y)
+//   - Rectangle (x, y, w, h) => Shape (x, y)
+//     - Square (x, y, w) => Rectangle (x, y, w, w)
+const
+  SScript =
+    // Shape: (Javascript) superclass
+    'function Shape(x, y) {'                                     + sLineBreak +
+    '  this.x = x;'                                              + sLineBreak +
+    '  this.y = y;'                                              + sLineBreak +
+    '}'                                                          + sLineBreak +
+                                                                   sLineBreak +
+    'Shape.prototype.move = function(x, y) {'                    + sLineBreak +
+    '  this.x += x;'                                             + sLineBreak +
+    '  this.y += y;'                                             + sLineBreak +
+    '};'                                                         + sLineBreak +
+                                                                   sLineBreak +
+    // Circle: (Javascript) subclass of (Javascript) Shape
+    'function Circle(x, y, r) {'                                 + sLineBreak +
+    '  Shape.call(this, x, y);'                                  + sLineBreak +
+    '  this.r = r;'                                              + sLineBreak +
+    '}'                                                          + sLineBreak +
+                                                                   sLineBreak +
+    'Circle.prototype = Object.create(Shape.prototype);'         + sLineBreak +
+    'Circle.prototype.constructor = Circle;'                     + sLineBreak +
+                                                                   sLineBreak +
+    // Square: (Javascript) subclass of (native) Rectangle
+    'function Square(x, y, w) {'                                 + sLineBreak +
+    '  Rectangle.call(this, x, y, w, w);'                        + sLineBreak +
+    '}'                                                          + sLineBreak +
+                                                                   sLineBreak +
+    'Square.prototype = Object.create(Rectangle.prototype);'     + sLineBreak +
+    'Square.prototype.constructor = Square;';
+  SName = 'TestInheritance.js';
+var
+  ShapeObj, CircleObj, RectangleObj, SquareObj: JsValueRef;
+begin
+  RectangleConstructor := nil;
+  RectanglePrototype := nil;
+  try
+    JsDefineProperty('Rectangle', True, True, JsCreateFunction(Global_GetRectangleCallback, Self, UnicodeString('')),
+      nil, JsGlobal);
+
+    JsRunScript(SScript, SName);
+
+    // var shapeObj = new Shape(10, 10);
+    ShapeObj := JsNew('Shape', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(10)]);
+    CheckValueType(JsObject, ShapeObj, 'shapeObj value type');
+    CheckTrue(JsInstanceOf(ShapeObj, 'Shape'), 'shapeObj instanceof Shape');
+    CheckFalse(JsInstanceOf(ShapeObj, 'Circle'), 'shapeObj instanceof Circle');
+    CheckFalse(JsInstanceOf(ShapeObj, 'Rectangle'), 'shapeObj instanceof Rectangle');
+    CheckFalse(JsInstanceOf(ShapeObj, 'Square'), 'shapeObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(ShapeObj, 'x')), 'shapeObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(ShapeObj, 'y')), 'shapeObj.y before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], ShapeObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(ShapeObj, 'x')), 'shapeObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(ShapeObj, 'y')), 'shapeObj.y after move');
+
+    // var circleObj = new Circle(10, 10, 10);
+    CircleObj := JsNew('Circle', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(10)]);
+    CheckValueType(JsObject, CircleObj, 'circleObj value type');
+    CheckTrue(JsInstanceOf(CircleObj, 'Shape'), 'circleObj instanceof Shape');
+    CheckTrue(JsInstanceOf(CircleObj, 'Circle'), 'circleObj instanceof Circle');
+    CheckFalse(JsInstanceOf(CircleObj, 'Rectangle'), 'circleObj instanceof Rectangle');
+    CheckFalse(JsInstanceOf(CircleObj, 'Square'), 'circleObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'x')), 'circleObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'y')), 'circleObj.y before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], CircleObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(CircleObj, 'x')), 'circleObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(CircleObj, 'y')), 'circleObj.y after move');
+
+    // var rectangleObj = new Rectangle(10, 10, 60, 40);
+    RectangleObj := JsNew('Rectangle', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(60), IntToJsNumber(40)]);
+    CheckValueType(JsObject, RectangleObj, 'rectangleObj value type');
+    CheckTrue(JsInstanceOf(RectangleObj, 'Shape'), 'rectangleObj instanceof Shape');
+    CheckFalse(JsInstanceOf(RectangleObj, 'Circle'), 'rectangleObj instanceof Circle');
+    CheckTrue(JsInstanceOf(RectangleObj, 'Rectangle'), 'rectangleObj instanceof Rectangle');
+    CheckFalse(JsInstanceOf(RectangleObj, 'Square'), 'rectangleObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(RectangleObj, 'x')), 'rectangleObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(RectangleObj, 'y')), 'rectangleObj.y before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], RectangleObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(RectangleObj, 'x')), 'rectangleObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(RectangleObj, 'y')), 'rectangleObj.y after move');
+
+    // var squareObj = new Square(10, 10, 20);
+    SquareObj := JsNew('Square', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(20)]);
+    CheckValueType(JsObject, SquareObj, 'squareObj value type');
+    CheckTrue(JsInstanceOf(SquareObj, 'Shape'), 'squareObj instanceof Shape');
+    CheckFalse(JsInstanceOf(SquareObj, 'Circle'), 'squareObj instanceof Circle');
+    CheckTrue(JsInstanceOf(SquareObj, 'Rectangle'), 'squareObj instanceof Rectangle');
+    CheckTrue(JsInstanceOf(SquareObj, 'Square'), 'squareObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(SquareObj, 'x')), 'squareObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'sqaureObj.y before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], SquareObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'x')), 'squareObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'squareObj.y after move');
+  finally
+    RectanglePrototype := nil;
+    RectangleConstructor := nil;
+  end;
+end;
+
 initialization
 {$ifdef FPC}
-  RegisterTest(TChakraCoreUtilsScripting);
+  RegisterTests([TChakraCoreUtilsScripting, TChakraCorePrototypes]);
 {$else}
-  RegisterTest(TChakraCoreUtilsScripting.Suite);
+  RegisterTests([TChakraCoreUtilsScripting.Suite, TChakraCorePrototypes.Suite]);
 {$endif}
 
 end.

@@ -208,13 +208,12 @@ type
 
   TChakraCoreContext = class
   private
+    FClassInfos: TList;
     FGlobal: JsValueRef;
     FHandle: JsContextRef;
     FMessageQueue: TQueue;
     FModules: TStringList;
     FName: UnicodeString;
-    FProjectedClasses: TList;
-    FProxyTargetSymbol: JsValueRef;
     FRuntime: TChakraCoreRuntime;
     FSourceContext: NativeUInt;
 
@@ -222,8 +221,9 @@ type
     FOnLoadModule: TLoadModuleEvent;
     FOnNativeObjectCreated: TNativeObjectCreatedEvent;
 
-    function AddPrototype(AClass: TNativeClass; APrototype: JsValueRef = nil): Integer;
-    function FindPrototype(AClass: TNativeClass): JsValueRef;
+    function AddClassInfo(AClass: TNativeClass; AConstructor, APrototype: JsValueRef): Integer;
+    function FindClassInfo(AClass: TNativeClass): Pointer; overload;
+    function FindClassInfo(AConstructor: JsValueRef): Pointer; overload;
     function GetData: Pointer;
     function GetHandle: JsContextRef;
     function GetGlobal: JsValueRef;
@@ -254,6 +254,7 @@ type
     procedure AddModule(const AName: UTF8String); overload;
     procedure AddModule(const AName: UnicodeString); overload;
     function CallFunction(Func: JsValueRef; Args: PJsValueRef; ArgCount: Word): JsValueRef; overload;
+    function CallFunction(Func: JsValueRef; const Args: array of JsValueRef): JsValueRef; overload;
     function CallFunction(const AName: UTF8String; const Args: array of JsValueRef;
       Instance: JsValueRef = nil): JsValueRef; overload;
     function CallFunction(const AName: UnicodeString; const Args: array of JsValueRef;
@@ -264,8 +265,8 @@ type
     function FindModule(const AName: UnicodeString): TChakraModule; overload;
     function FindModule(AHandle: JsModuleRecord): TChakraModule; overload;
     procedure PostMessage(AMessage: TBaseMessage);
-    function RunScript(const Script, AName: UTF8String): JsValueRef; overload;
-    function RunScript(const Script, AName: UnicodeString): JsValueRef; overload;
+    function RunScript(const Script, AName: UTF8String; IsLibraryCode: Boolean = False): JsValueRef; overload;
+    function RunScript(const Script, AName: UnicodeString; IsLibraryCode: Boolean = False): JsValueRef; overload;
 
     property Data: Pointer read GetData write SetData;
     property Global: JsValueRef read GetGlobal;
@@ -274,7 +275,6 @@ type
     property ModuleNames[Index: Integer]: UnicodeString read GetModuleNames;
     property Modules[Index: Integer]: TChakraModule read GetModules;
     property Name: UnicodeString read FName;
-    property ProxyTargetSymbol: JsValueRef read FProxyTargetSymbol;
     property Runtime: TChakraCoreRuntime read FRuntime;
 
     property OnActivate: TNotifyEvent read FOnActivate write FOnActivate;
@@ -307,42 +307,43 @@ type
   TNativeObject = class
   private
     FInstance: JsValueRef;
-    FTargetInstance: JsValueRef;
 
     function GetContext: TChakraCoreContext;
     function GetContextHandle: JsContextRef;
-    procedure Proxify;
   protected
+    class procedure InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word); virtual;
+    class function InitializePrototype(AConstructor: JsValueRef): JsValueRef; virtual;
     class function Prototype: JsValueRef;
-    class procedure RegisterPrototype; virtual;
     class procedure RegisterMethod(AInstance: JsValueRef; const AName: UnicodeString; AMethod: Pointer;
       UseStrictRules: Boolean = True); virtual;
     class procedure RegisterMethods(AInstance: JsValueRef); virtual;
-    class procedure RegisterProperties(AInstance: JsValueRef); virtual;
     class procedure RegisterNamedProperty(AInstance: JsValueRef; const AName: UnicodeString;
       Configurable, Enumerable: Boolean; GetAccessor, SetAccessor: Pointer); overload; virtual;
     class procedure RegisterNamedProperty(AInstance: JsValueRef; const AName: UnicodeString;
       Configurable, Enumerable, Writable: Boolean; Value: JsValueRef); overload; virtual;
+    class procedure RegisterProperties(AInstance: JsValueRef); virtual;
   public
-    constructor Create(Args: PJsValueRefArray = nil; ArgCount: Word = 0; AFinalize: Boolean = False); virtual;
+    constructor Create(Args: PJsValueRef = nil; ArgCount: Word = 0; AFinalize: Boolean = False); overload; virtual;
+    constructor Create(const Args: array of JsValueRef; AFinalize: Boolean = False); overload; virtual;
     destructor Destroy; override;
 
     function AddRef: Integer;
-    class procedure Project(const AName: UnicodeString = ''; UseStrictRules: Boolean = True);
+    class procedure Project(const AName: UnicodeString = ''; Scope: JsValueRef = nil; UseStrictRules: Boolean = True);
+      overload; virtual;
     function Release: Integer;
 
     property Context: TChakraCoreContext read GetContext;
     property ContextHandle: JsContextRef read GetContextHandle;
     property Instance: JsValueRef read FInstance;
-    property TargetInstance: JsValueRef read FTargetInstance;
   end;
 
 implementation
 
 type
-  PProjectedClassInfo = ^TProjectedClassInfo;
-  TProjectedClassInfo = record
+  PNativeClassInfo = ^TNativeClassInfo;
+  TNativeClassInfo = record
     AClass: TNativeClass;
+    AConstructor: JsValueRef;
     APrototype: JsValueRef;
   end;
 
@@ -392,67 +393,6 @@ begin
     end;
 end;
 
-type
-  TProxyGetArgKind = (pgaThisArg, pgaTarget, pgaProp, pgaReceiver);
-  PJsProxyGetArgs = ^TJsProxyGetArgs;
-  TJsProxyGetArgs = array[TProxyGetArgKind] of JsValueRef;
-
-function Proxy_GetCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyGetArgs; ArgCount: Word;
-  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
-var
-  NativeInstance: TNativeObject absolute CallbackState;
-begin
-  if not Assigned(Args) or (ArgCount < 4) then
-    raise Exception.Create('Invalid proxy ''get'' arguments');
-
-  if not JsEqual(Args^[pgaTarget], NativeInstance.TargetInstance) then
-    raise Exception.Create('Proxy ''get'' target not the registered target');
-
-  if JsEqual(Args^[pgaProp], NativeInstance.Context.ProxyTargetSymbol) then
-    Result := NativeInstance.TargetInstance
-  else
-    Result := JsGetProperty(NativeInstance.TargetInstance, Args^[pgaProp]);
-end;
-
-type
-  TProxySetArgKind = (psaThisArg, psaTarget, psaProp, psaValue, psaReceiver);
-  PJsProxySetArgs = ^TJsProxySetArgs;
-  TJsProxySetArgs = array[TProxySetArgKind] of JsValueRef;
-
-function Proxy_SetCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxySetArgs; ArgCount: Word;
-  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
-var
-  NativeInstance: TNativeObject absolute CallbackState;
-begin
-  if not Assigned(Args) or (ArgCount < 5) then
-    raise Exception.Create('Invalid proxy ''set'' arguments');
-
-  if not JsEqual(Args^[psaTarget], NativeInstance.TargetInstance) then
-    raise Exception.Create('Proxy ''set'' target not the registered target');
-
-  JsSetProperty(NativeInstance.TargetInstance, Args^[psaProp], Args^[psaValue]);
-  Result := JsTrueValue;
-end;
-
-type
-  TProxyHasArgKind = (phaThisArg, phaTarget, phaProp);
-  PJsProxyHasArgs = ^TJsProxyHasArgs;
-  TJsProxyHasArgs = array[TProxyHasArgKind] of JsValueRef;
-
-function Proxy_HasCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyHasArgs; ArgCount: Word;
-  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
-var
-  NativeInstance: TNativeObject absolute CallbackState;
-begin
-  if not Assigned(Args) or (ArgCount < 3) then
-    raise Exception.Create('Invalid proxy ''has'' arguments');
-
-  if not JsEqual(Args^[phaTarget], NativeInstance.TargetInstance) then
-    raise Exception.Create('Proxy ''has'' target not the registered target');
-
-  Result := BooleanToJsBoolean(JsHasProperty(Args^[phaTarget], Args^[phaProp]));
-end;
-
 procedure Native_FinalizeCallback(data: Pointer); {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 begin
   TObject(data).Free;
@@ -466,16 +406,56 @@ var
 begin
   Result := JsUndefinedValue;
   try
-    if not IsConstructCall then
-      raise Exception.Create('Constructor called as a method');
+    if IsConstructCall then
+    begin
+      Inc(Args);
+      Dec(ArgCount);
 
-    Inc(Args);
-    Dec(ArgCount);
+      NativeInstance := NativeClass.Create(Pointer(Args), ArgCount, True);
+      Result := NativeInstance.Instance;
+    end
+    else
+    begin
+      Result := Args^;
 
-    NativeInstance := NativeClass.Create(Pointer(Args), ArgCount, True);
-    Result := NativeInstance.Instance;
+      Inc(Args);
+      Dec(ArgCount);
+
+      NativeClass.InitializeInstance(Result, Args, ArgCount);
+    end;
   except on E: Exception do
     JsThrowError(WideFormat('[%s] %s', [E.ClassName, E.Message]));
+  end;
+end;
+
+function Native_GetConstructorCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRef; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  NativeClass: TNativeClass absolute CallbackState;
+  Context: TChakraCoreContext;
+  Info: PNativeClassInfo;
+  AConstructor, APrototype: JsValueRef;
+begin
+  Result := JsUndefinedValue;
+  try
+    Context := TChakraCoreContext.CurrentContext;
+    Info := Context.FindClassInfo(NativeClass);
+    if Assigned(Info) then
+      Result := Info^.AConstructor
+    else
+    begin
+      AConstructor := JsCreateFunction(Native_ConstructorCallback, CallbackState, UnicodeString(''));
+      APrototype := NativeClass.InitializePrototype(AConstructor);
+      NativeClass.RegisterMethods(APrototype);
+      NativeClass.RegisterProperties(APrototype);
+      JsSetProperty(AConstructor, 'prototype', APrototype);
+      JsSetProperty(APrototype, 'constructor', AConstructor);
+      Context.AddClassInfo(NativeClass, AConstructor, APrototype);
+      Result := AConstructor;
+    end;
+  except
+    on E: Exception do
+      JsThrowError(Format('[%s] %s', [E.ClassName, E.Message]));
   end;
 end;
 
@@ -527,7 +507,7 @@ begin
     TMethod(NativeMethod).Code := CallbackState;
     TMethod(NativeMethod).Data := JsGetExternalData(Args^);
 
-    if Args^ <> TNativeObject(TMethod(NativeMethod).Data).TargetInstance then
+    if Args^ <> TNativeObject(TMethod(NativeMethod).Data).Instance then
       raise Exception.Create('thisarg not the registered instance');
 
     Result := NativeMethod;
@@ -553,7 +533,7 @@ begin
     TMethod(NativeMethod).Code := CallbackState;
     TMethod(NativeMethod).Data := JsGetExternalData(Args^[0]);
 
-    if Args^[0] <> TNativeObject(TMethod(NativeMethod).Data).TargetInstance then
+    if Args^[0] <> TNativeObject(TMethod(NativeMethod).Data).Instance then
       raise Exception.Create('thisarg not the registered instance');
 
     NativeMethod(Args^[1]);
@@ -1013,37 +993,65 @@ end;
 
 { TChakraCoreContext private }
 
-function TChakraCoreContext.AddPrototype(AClass: TNativeClass; APrototype: JsValueRef): Integer;
+function TChakraCoreContext.AddClassInfo(AClass: TNativeClass; AConstructor, APrototype: JsValueRef): Integer;
 var
-  Info: PProjectedClassInfo;
+  Info: PNativeClassInfo;
 begin
-  if not Assigned(APrototype) then
-    APrototype := JsCreateObject;
+  if JsGetValueType(AConstructor) <> JsFunction then
+    raise Exception.CreateFmt('Constructor for native class ''%s'' not a function', [AClass.ClassName]);
 
-  GetMem(Info, SizeOf(TProjectedClassInfo));
+  if not Assigned(APrototype) then
+    APrototype := JsGetProperty(AConstructor, UnicodeString('prototype'));
+
+  if JsGetValueType(APrototype) <> JsObject then
+    raise Exception.CreateFmt('Prototype for native class ''%s'' not an object', [AClass.ClassName]);
+
+  GetMem(Info, SizeOf(TNativeClassInfo));
   try
     Info^.AClass := AClass;
+    Info^.AConstructor := AConstructor;
     Info^.APrototype := APrototype;
-
-    Result := FProjectedClasses.Add(Info);
+    Result := FClassInfos.Add(Info);
   except
     FreeMem(Info);
     raise;
   end;
 end;
 
-function TChakraCoreContext.FindPrototype(AClass: TNativeClass): JsValueRef;
+function TChakraCoreContext.FindClassInfo(AClass: TNativeClass): Pointer;
 var
   I: Integer;
+  Info: PNativeClassInfo;
 begin
   Result := nil;
 
-  for I := 0 to FProjectedClasses.Count - 1 do
-    if PProjectedClassInfo(FProjectedClasses[I])^.AClass = AClass then
+  for I := 0 to FClassInfos.Count - 1 do
+  begin
+    Info := FClassInfos[I];
+    if Info^.AClass = AClass then
     begin
-      Result := PProjectedClassInfo(FProjectedClasses[I])^.APrototype;
+      Result := Info;
       Break;
     end;
+  end;
+end;
+
+function TChakraCoreContext.FindClassInfo(AConstructor: JsValueRef): Pointer;
+var
+  I: Integer;
+  Info: PNativeClassInfo;
+begin
+  Result := nil;
+
+  for I := 0 to FClassInfos.Count - 1 do
+  begin
+    Info := FClassInfos[I];
+    if Info^.AConstructor = AConstructor then
+    begin
+      Result := Info;
+      Break;
+    end;
+  end;
 end;
 
 function TChakraCoreContext.GetData: Pointer;
@@ -1075,7 +1083,11 @@ end;
 
 function TChakraCoreContext.GetModuleNames(Index: Integer): UnicodeString;
 begin
+{$ifdef UNICODE}
   Result := FModules[Index];
+{$else}
+  Result := UTF8Decode(FModules[Index]);
+{$endif}
 end;
 
 function TChakraCoreContext.GetModules(Index: Integer): TChakraModule;
@@ -1103,7 +1115,11 @@ function TChakraCoreContext.CreateModule(const AName: UnicodeString; ARefModule:
 begin
   Result := TChakraModule.Create(Self, AName, ARefModule);
   try
+{$ifdef UNICODE}
     FModules.AddObject(AName, Result);
+{$else}
+    FModules.AddObject(UTF8Encode(AName), Result);
+{$endif}
   except
     Result.Free;
     raise;
@@ -1236,16 +1252,16 @@ begin
   FModules.Duplicates := dupError;
   FModules.Sorted := True;
   FSourceContext := 0;
-  FProjectedClasses := TList.Create;
+  FClassInfos := TList.Create;
 end;
 
 destructor TChakraCoreContext.Destroy;
 var
   I: Integer;
 begin
-  for I := FProjectedClasses.Count - 1 downto 0 do
-    FreeMem(FProjectedClasses[I]);
-  FreeAndNil(FProjectedClasses);
+  for I := FClassInfos.Count - 1 downto 0 do
+    FreeMem(FClassInfos[I]);
+  FreeAndNil(FClassInfos);
   FGlobal := JS_INVALID_REFERENCE;
   FHandle := JS_INVALID_REFERENCE;
   FRuntime := nil;
@@ -1259,8 +1275,6 @@ procedure TChakraCoreContext.Activate;
 begin
   ChakraCoreCheck(JsSetCurrentContext(Handle));
   ChakraCoreCheck(JsSetPromiseContinuationCallback(PromiseContinuation, Self));
-  FProxyTargetSymbol := JsCreateSymbol('__proxy_target__');
-  ChakraCoreCheck(JsAddRef(FProxyTargetSymbol, nil));
   DoActivate;
 end;
 
@@ -1281,6 +1295,12 @@ begin
   ProcessMessages;
 end;
 
+function TChakraCoreContext.CallFunction(Func: JsValueRef; const Args: array of JsValueRef): JsValueRef;
+begin
+  Result := JsCallFunction(Func, Args);
+  ProcessMessages;
+end;
+
 function TChakraCoreContext.CallFunction(const AName: UTF8String; const Args: array of JsValueRef;
   Instance: JsValueRef): JsValueRef;
 begin
@@ -1296,21 +1316,19 @@ end;
 
 function TChakraCoreContext.CallNew(const AConstructorName: UTF8String; const Args: array of JsValueRef): JsValueRef;
 begin
-  Result := JsNew(UTF8Decode(AConstructorName), Args);
+  Result := JsNew(AConstructorName, Args);
   ProcessMessages;
 end;
 
 function TChakraCoreContext.CallNew(const AConstructorName: UnicodeString; const Args: array of JsValueRef): JsValueRef;
 begin
-  Result := CallNew(UTF8Encode(AConstructorName), Args);
+  Result := JsNew(AConstructorName, Args);
+  ProcessMessages;
 end;
 
 class function TChakraCoreContext.CurrentContext: TChakraCoreContext;
-var
-  CurrentContext: JsContextRef;
 begin
-  ChakraCoreCheck(JsGetCurrentContext(CurrentContext));
-  ChakraCoreCheck(JsGetContextData(CurrentContext, Pointer(Result)));
+  ChakraCoreCheck(JsGetContextData(JsGetCurrentContext, Pointer(Result)));
 end;
 
 function TChakraCoreContext.FindModule(const AName: UnicodeString): TChakraModule;
@@ -1319,7 +1337,13 @@ var
 begin
   Result := nil;
 
+  ProcessMessages;
+
+{$ifdef UNICODE}
   if FModules.Find(AName, Index) then
+{$else}
+  if FModules.Find(UTF8Encode(AName), Index) then
+{$endif}
     Result := Modules[Index];
 end;
 
@@ -1342,7 +1366,7 @@ begin
   FMessageQueue.Push(AMessage);
 end;
 
-function TChakraCoreContext.RunScript(const Script, AName: UTF8String): JsValueRef;
+function TChakraCoreContext.RunScript(const Script, AName: UTF8String; IsLibraryCode: Boolean): JsValueRef;
 begin
   if ModuleCount = 0 then
     AddModule('');
@@ -1350,7 +1374,7 @@ begin
   FName := UTF8ToString(AName);
   Inc(FSourceContext);
   try
-    Result := JsRunScript(Script, AName, FSourceContext);
+    Result := JsRunScript(Script, AName, FSourceContext, IsLibraryCode);
 
     ProcessMessages;
   finally
@@ -1358,7 +1382,7 @@ begin
   end;
 end;
 
-function TChakraCoreContext.RunScript(const Script, AName: UnicodeString): JsValueRef;
+function TChakraCoreContext.RunScript(const Script, AName: UnicodeString; IsLibraryCode: Boolean): JsValueRef;
 begin
   if ModuleCount = 0 then
     AddModule('');
@@ -1366,7 +1390,7 @@ begin
   FName := AName;
   Inc(FSourceContext);
   try
-    Result := JsRunScript(Script, AName, FSourceContext);
+    Result := JsRunScript(Script, AName, FSourceContext, IsLibraryCode);
 
     ProcessMessages;
   finally
@@ -1392,7 +1416,7 @@ begin
   inherited Destroy;
 end;
 
-{ TChakraCoreNativeObject private }
+{ TNativeObject private }
 
 function TNativeObject.GetContext: TChakraCoreContext;
 var
@@ -1406,31 +1430,26 @@ begin
   ChakraCoreCheck(JsGetContextOfObject(FInstance, Result));
 end;
 
-procedure TNativeObject.Proxify;
-var
-  Handler: JsValueRef;
+class procedure TNativeObject.InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word);
 begin
-  JsSetProperty(FInstance, Context.ProxyTargetSymbol, FInstance);
-  Handler := JsCreateObject;
-  JsSetCallback(Handler, 'get', @Proxy_GetCallback, Self);
-  JsSetCallback(Handler, 'set', @Proxy_SetCallback, Self);
-  JsSetCallback(Handler, 'has', @Proxy_HasCallback, Self);
-  FTargetInstance := FInstance;
-  FInstance := JsNew('Proxy', [JsUndefinedValue, FInstance, Handler]);
+  // do nothing
 end;
 
-class procedure TNativeObject.RegisterPrototype;
+class function TNativeObject.InitializePrototype(AConstructor: JsValueRef): JsValueRef;
 begin
-  TChakraCoreContext.CurrentContext.AddPrototype(Self);
-  RegisterMethods(Prototype);
-  RegisterProperties(Prototype);
+  Result := JsGetProperty(AConstructor, 'prototype');
 end;
 
-{ TChakraCoreNativeObject protected }
+{ TNativeObject protected }
 
 class function TNativeObject.Prototype: JsValueRef;
+var
+  Info: PNativeClassInfo;
 begin
-  Result := TChakraCoreContext.CurrentContext.FindPrototype(Self);
+  Result := nil;
+  Info := TChakraCoreContext.CurrentContext.FindClassInfo(Self);
+  if Assigned(Info) then
+    Result := Info^.APrototype;
 end;
 
 class procedure TNativeObject.RegisterMethod(AInstance: JsValueRef; const AName: UnicodeString;
@@ -1444,29 +1463,19 @@ begin
   // do nothing
 end;
 
-class procedure TNativeObject.RegisterProperties(AInstance: JsValueRef);
-begin
-  // do nothing
-end;
-
 class procedure TNativeObject.RegisterNamedProperty(AInstance: JsValueRef; const AName: UnicodeString;
   Configurable, Enumerable: Boolean; GetAccessor, SetAccessor: Pointer);
 var
-  Descriptor: JsValueRef;
-  PropName: UTF8String;
-  PropId: JsPropertyIdRef;
-  B: ByteBool;
+  GetFunc, SetFunc: JsValueRef;
 begin
-  Descriptor := JsCreateObject;
-  JsSetProperty(Descriptor, 'configurable', BooleanToJsBoolean(Configurable), True);
-  JsSetProperty(Descriptor, 'enumerable', BooleanToJsBoolean(Enumerable), True);
+  GetFunc := nil;
+  SetFunc := nil;
   if Assigned(GetAccessor) then
-    JsSetCallback(Descriptor, 'get', Native_PropGetCallback, GetAccessor, True);
+    GetFunc := JsCreateFunction(@Native_PropGetCallback, GetAccessor, UnicodeString(''));
   if Assigned(SetAccessor) then
-    JsSetCallback(Descriptor, 'set', @Native_PropSetCallback, SetAccessor, True);
-  PropName := UTF8Encode(AName);
-  ChakraCoreCheck(JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId));
-  ChakraCoreCheck(JsDefineProperty(AInstance, PropId, Descriptor, B));
+    SetFunc := JsCreateFunction(@Native_PropSetCallback, SetAccessor, UnicodeString(''));
+    
+  JsDefineProperty(AName, Configurable, Enumerable, GetFunc, SetFunc, AInstance);
 end;
 
 class procedure TNativeObject.RegisterNamedProperty(AInstance: JsValueRef; const AName: UnicodeString;
@@ -1484,12 +1493,17 @@ begin
   JsSetProperty(Descriptor, 'value', Value, True);
   PropName := UTF8Encode(AName);
   ChakraCoreCheck(JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId));
-  ChakraCoreCheck(JsDefineProperty(AInstance, PropId, Descriptor, B));
+  ChakraCoreCheck(ChakraCommon.JsDefineProperty(AInstance, PropId, Descriptor, B));
 end;
 
-{ TChakraCoreNativeObject public }
+class procedure TNativeObject.RegisterProperties(AInstance: JsValueRef);
+begin
+  // do nothing
+end;
 
-constructor TNativeObject.Create(Args: PJsValueRefArray; ArgCount: Word; AFinalize: Boolean);
+{ TNativeObject public }
+
+constructor TNativeObject.Create(Args: PJsValueRef; ArgCount: Word; AFinalize: Boolean);
 const
   Finalizers: array[Boolean] of JsFinalizeCallback = (nil, Native_FinalizeCallback);
 var
@@ -1497,18 +1511,33 @@ var
 begin
   inherited Create;
   FInstance := nil;
-  ChakraCoreCheck(JsCreateExternalObject(Self, Finalizers[AFinalize], FInstance));
-  JsSetExternalData(FInstance, Self);
   APrototype := Prototype;
   if Assigned(APrototype) then
-    ChakraCoreCheck(JsSetPrototype(FInstance, Prototype))
+  begin
+    ChakraCoreCheck(JsCreateExternalObjectWithPrototype(Self, Finalizers[AFinalize], APrototype, FInstance));
+    JsSetExternalData(FInstance, Self);
+  end
   else
   begin
+    ChakraCoreCheck(JsCreateExternalObject(Self, Finalizers[AFinalize], FInstance));
+    JsSetExternalData(FInstance, Self);
     RegisterMethods(FInstance);
     RegisterProperties(FInstance);
   end;
-  Proxify;
+  InitializeInstance(FInstance, Args, ArgCount);
   Context.DoNativeObjectCreated(Self);
+end;
+
+constructor TNativeObject.Create(const Args: array of JsValueRef; AFinalize: Boolean);
+var
+  PArg: PJsValueRef;
+  Len: Integer;
+begin
+  PArg := nil;
+  Len := Length(Args);
+  if Len > 0 then
+    PArg := @Args[0];
+  Create(PArg, Len, AFinalize);
 end;
 
 destructor TNativeObject.Destroy;
@@ -1521,27 +1550,30 @@ end;
 
 function TNativeObject.AddRef: Integer;
 begin
-  ChakraCoreCheck(JsAddRef(FTargetInstance, @Result));
+  ChakraCoreCheck(JsAddRef(FInstance, @Result));
 end;
 
-class procedure TNativeObject.Project(const AName: UnicodeString; UseStrictRules: Boolean);
+class procedure TNativeObject.Project(const AName: UnicodeString; Scope: JsValueRef; UseStrictRules: Boolean);
 var
   ConstructorName: UnicodeString;
-  ConstructorFunc: JsValueRef;
 begin
   ConstructorName := AName;
   if ConstructorName = '' then
+  begin
     ConstructorName := UnicodeString(ClassName);
-  ChakraCoreCheck(JsCreateNamedFunction(StringToJsString(ConstructorName), Native_ConstructorCallback, Self,
-    ConstructorFunc));
-  JsSetProperty(JsGlobal, ConstructorName, ConstructorFunc, UseStrictRules);
-  RegisterPrototype;
-  ChakraCoreCheck(JsSetPrototype(ConstructorFunc, Prototype));
+    if (ConstructorName[1] = 'T') and (Length(ConstructorName) > 1) then
+      Delete(ConstructorName, 1, 1);
+  end;
+
+  if not Assigned(Scope) then
+    Scope := JsGlobal;
+  JsDefineProperty(ConstructorName, True, True, JsCreateFunction(Native_GetConstructorCallback, Self,
+    UnicodeString('get' + ConstructorName)), nil, Scope);
 end;
 
 function TNativeObject.Release: Integer;
 begin
-  ChakraCoreCheck(JsRelease(FTargetInstance, @Result));
+  ChakraCoreCheck(JsRelease(FInstance, @Result));
 end;
 
 end.

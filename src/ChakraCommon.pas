@@ -497,21 +497,22 @@ type
   /// <summary>
   ///     Attribute mask for JsParseScriptWithAttributes
   /// </summary>
-  JsParseScriptAttributes = (
+  JsParseScriptAttribute = (
     /// <summary>
     ///     Default attribute
     /// </summary>
-    JsParseScriptAttributeNone = $0,
+    // JsParseScriptAttributeNone = $0,
     /// <summary>
     ///     Specified script is internal and non-user code. Hidden from debugger
     /// </summary>
-    JsParseScriptAttributeLibraryCode = $1,
+    JsParseScriptAttributeLibraryCode, // = $1,
     /// <summary>
     ///     ChakraCore assumes ExternalArrayBuffer is Utf8 by default.
     ///     This one needs to be set for Utf16
     /// </summary>
-    JsParseScriptAttributeArrayBufferIsUtf16Encoded = $2
+    JsParseScriptAttributeArrayBufferIsUtf16Encoded // = $2
   );
+  JsParseScriptAttributes = set of JsParseScriptAttribute;
 
   /// <summary>
   ///     Type enumeration of a JavaScript property

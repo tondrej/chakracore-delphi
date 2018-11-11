@@ -82,7 +82,11 @@ var
 begin
   Result := '';
 
+{$ifdef UNICODE}
   FileStream := TFileStream.Create(FileName, fmOpenRead);
+{$else}
+  FileStream := TFileStream.Create(UTF8Encode(FileName), fmOpenRead);
+{$endif}
   try
     if FileStream.Size = 0 then
       Exit;
@@ -253,11 +257,12 @@ procedure TDataModuleMain.ContextLoadModule(Sender: TObject; Module: TChakraModu
 var
   ModuleFileName: UnicodeString;
 begin
-  ModuleFileName := IncludeTrailingPathDelimiter(FBaseDir) + ChangeFileExt(Module.Name, '.js');
+  ModuleFileName := IncludeTrailingPathDelimiter(FBaseDir) + ChangeFileExt(Module.Name, UnicodeString('.js'));
   if FileExists(ModuleFileName) then
   begin
     Module.Parse(LoadFile(ModuleFileName));
-    Module.URL := WideFormat('file://%s/%s', [ChangeFileExt(ExtractFileName(ParamStr(0)), ''), ChangeFileExt(Module.Name, '.js')]);
+    Module.URL := WideFormat('file://%s/%s', [ChangeFileExt(ExtractFileName(ParamStr(0)), UnicodeString('')),
+      ChangeFileExt(Module.Name, UnicodeString('.js'))]);
   end;
 end;
 

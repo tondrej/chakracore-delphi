@@ -475,7 +475,7 @@ begin
     JsRunScript(SScript, SName);
 
     // var shapeObj = new Shape(10, 10);
-    ShapeObj := JsNew('Shape', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(10)]);
+    ShapeObj := JsNew('Shape', [IntToJsNumber(10), IntToJsNumber(10)]);
     CheckValueType(JsObject, ShapeObj, 'shapeObj value type');
     CheckTrue(JsInstanceOf(ShapeObj, 'Shape'), 'shapeObj instanceof Shape');
     CheckFalse(JsInstanceOf(ShapeObj, 'Circle'), 'shapeObj instanceof Circle');

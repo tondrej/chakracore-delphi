@@ -1020,7 +1020,7 @@ begin
     JsRunScript(SScript, SName);
 
     // var shapeObj = new Shape(10, 10);
-    ShapeObj := JsNew('Shape', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(10)]);
+    ShapeObj := JsNew('Shape', [IntToJsNumber(10), IntToJsNumber(10)]);
     CheckValueType(JsObject, ShapeObj, 'shapeObj value type');
     CheckTrue(JsInstanceOf(ShapeObj, 'Shape'), 'shapeObj instanceof Shape');
     CheckFalse(JsInstanceOf(ShapeObj, 'Circle'), 'shapeObj instanceof Circle');
@@ -1043,9 +1043,11 @@ begin
 
     CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'x')), 'circleObj.x before move');
     CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'y')), 'circleObj.y before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'r')), 'circleObj.r before move');
     JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], CircleObj);
     CheckEquals(20, JsNumberToInt(JsGetProperty(CircleObj, 'x')), 'circleObj.x after move');
     CheckEquals(20, JsNumberToInt(JsGetProperty(CircleObj, 'y')), 'circleObj.y after move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'r')), 'circleObj.r after move');
 
     // var rectangleObj = new Rectangle(10, 10, 60, 40);
     RectangleObj := JsNew('Rectangle', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(60), IntToJsNumber(40)]);
@@ -1057,9 +1059,13 @@ begin
 
     CheckEquals(10, JsNumberToInt(JsGetProperty(RectangleObj, 'x')), 'rectangleObj.x before move');
     CheckEquals(10, JsNumberToInt(JsGetProperty(RectangleObj, 'y')), 'rectangleObj.y before move');
+    CheckEquals(60, JsNumberToInt(JsGetProperty(RectangleObj, 'w')), 'rectangleObj.w before move');
+    CheckEquals(40, JsNumberToInt(JsGetProperty(RectangleObj, 'h')), 'rectangleObj.h before move');
     JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], RectangleObj);
     CheckEquals(20, JsNumberToInt(JsGetProperty(RectangleObj, 'x')), 'rectangleObj.x after move');
     CheckEquals(20, JsNumberToInt(JsGetProperty(RectangleObj, 'y')), 'rectangleObj.y after move');
+    CheckEquals(60, JsNumberToInt(JsGetProperty(RectangleObj, 'w')), 'rectangleObj.w after move');
+    CheckEquals(40, JsNumberToInt(JsGetProperty(RectangleObj, 'h')), 'rectangleObj.h after move');
 
     // var squareObj = new Square(10, 10, 20);
     SquareObj := JsNew('Square', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(20)]);
@@ -1071,9 +1077,13 @@ begin
 
     CheckEquals(10, JsNumberToInt(JsGetProperty(SquareObj, 'x')), 'squareObj.x before move');
     CheckEquals(10, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'sqaureObj.y before move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'w')), 'squareObj.w before move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'h')), 'squareObj.h before move');
     JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], SquareObj);
     CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'x')), 'squareObj.x after move');
     CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'squareObj.y after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'w')), 'squareObj.w after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'h')), 'squareObj.h after move');
   finally
     RectanglePrototype := nil;
     RectangleConstructor := nil;

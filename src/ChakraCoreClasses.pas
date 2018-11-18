@@ -311,6 +311,7 @@ type
     function GetContext: TChakraCoreContext;
     function GetContextHandle: JsContextRef;
   protected
+    class function ParentConstructor: JsValueRef;
     class procedure InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word); virtual;
     class function InitializePrototype(AConstructor: JsValueRef): JsValueRef; virtual;
     class function Prototype: JsValueRef;
@@ -1430,14 +1431,39 @@ begin
   ChakraCoreCheck(JsGetContextOfObject(FInstance, Result));
 end;
 
-class procedure TNativeObject.InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word);
+class function TNativeObject.ParentConstructor: JsValueRef;
+var
+  Info: PNativeClassInfo;
 begin
-  // do nothing
+  Result := nil;
+  if Self.ClassParent <> TNativeObject then
+  begin
+    Info := TChakraCoreContext.CurrentContext.FindClassInfo(TNativeClass(Self.ClassParent));
+    if Assigned(Info) then
+      Result := Info^.AConstructor;
+  end;
+end;
+
+class procedure TNativeObject.InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word);
+var
+  ParentArgs: JsValueRefArray;
+begin
+  if Self.ClassParent <> TNativeObject then
+  begin
+    // pass thisarg + args
+    SetLength(ParentArgs, ArgCount + 1);
+    ParentArgs[0] := AInstance;
+    Move(Args^, ParentArgs[1], ArgCount * SizeOf(JsValueRef));
+    JsCallFunction(ParentConstructor, @ParentArgs[0], ArgCount + 1);
+  end;
 end;
 
 class function TNativeObject.InitializePrototype(AConstructor: JsValueRef): JsValueRef;
 begin
-  Result := JsGetProperty(AConstructor, 'prototype');
+  if Self.ClassParent = TNativeObject then
+    Result := JsGetProperty(AConstructor, 'prototype')
+  else
+    Result := JsCreateObject(JsGetProperty(ParentConstructor, 'prototype'));
 end;
 
 { TNativeObject protected }
@@ -1557,6 +1583,9 @@ class procedure TNativeObject.Project(const AName: UnicodeString; Scope: JsValue
 var
   ConstructorName: UnicodeString;
 begin
+  if Self = TNativeObject then // only project descendants
+    Exit;
+
   ConstructorName := AName;
   if ConstructorName = '' then
   begin

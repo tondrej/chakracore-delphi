@@ -83,6 +83,9 @@ function StringToJsString(const S: UnicodeString): JsValueRef; overload;
 function JsEscapeString(const S: UTF8String): UTF8String; overload;
 function JsEscapeString(const S: UnicodeString): UnicodeString; overload;
 
+function StringsToJsArray(const Strings: array of UnicodeString): JsValueRef; overload;
+function StringsToJsArray(const Strings: array of UTF8String): JsValueRef; overload;
+
 function JsBooleanToBoolean(Value: JsValueRef): Boolean;
 function JsNumberToDouble(Value: JsValueRef): Double;
 function JsNumberToInt(Value: JsValueRef): Integer;
@@ -390,6 +393,26 @@ begin
   Result := WideStringReplace(Result, #13, '\r', [rfReplaceAll]);
   Result := WideStringReplace(Result, '"', '\"', [rfReplaceAll]);
   Result := WideStringReplace(Result, '''', '\''', [rfReplaceAll]);
+end;
+
+function StringsToJsArray(const Strings: array of UnicodeString): JsValueRef;
+var
+  L, I: Integer;
+begin
+  L := Length(Strings);
+  ChakraCoreCheck(JsCreateArray(L, Result));
+  for I := 0 to L - 1 do
+    JsSetIndexedProperty(Result, IntToJsNumber(I), StringToJsString(Strings[I]));
+end;
+
+function StringsToJsArray(const Strings: array of UTF8String): JsValueRef;
+var
+  L, I: Integer;
+begin
+  L := Length(Strings);
+  ChakraCoreCheck(JsCreateArray(L, Result));
+  for I := 0 to L - 1 do
+    JsSetIndexedProperty(Result, IntToJsNumber(I), StringToJsString(Strings[I]));
 end;
 
 function JsBooleanToBoolean(Value: JsValueRef): Boolean;

@@ -66,6 +66,7 @@ type
     procedure TestClassProjectedTwice;
     procedure TestClassProjectedInMultipleContexts;
     procedure TestInheritance;
+    procedure TestInheritance2;
   end;
 
 implementation
@@ -403,24 +404,34 @@ var
   ArgsArray: PJsValueRefArray absolute Args;
   ShapeCtr: JsValueRef;
 begin
-  // Shape.call(x, y);
-  ShapeCtr := JsGetProperty(JsGlobal, 'Shape'); // TODO scope?
-  JsCallFunction(ShapeCtr, [AInstance, ArgsArray^[0], ArgsArray^[1]]);
+  if Self = TRectangle then
+  begin
+    // Shape.call(x, y);
+    ShapeCtr := JsGetProperty(JsGlobal, 'Shape'); // TODO scope?
+    JsCallFunction(ShapeCtr, [AInstance, ArgsArray^[0], ArgsArray^[1]]);
 
-  // this.w = w;
-  JsSetProperty(AInstance, UnicodeString('w'), ArgsArray^[2]);
-  // this.h = h;
-  JsSetProperty(AInstance, UnicodeString('h'), ArgsArray^[3]);
+    // this.w = w;
+    JsSetProperty(AInstance, UnicodeString('w'), ArgsArray^[2]);
+    // this.h = h;
+    JsSetProperty(AInstance, UnicodeString('h'), ArgsArray^[3]);
+  end
+  else
+    inherited InitializeInstance(AInstance, Args, ArgCount);
 end;
 
 class function TRectangle.InitializePrototype(AConstructor: JsValueRef): JsValueRef;
 var
   ShapeCtr, ShapePrototype: JsValueRef;
 begin
-  ShapeCtr := JsGetProperty(JsGlobal, 'Shape');
-  ShapePrototype := JsGetProperty(ShapeCtr, 'prototype');
-  // Rectangle.prototype = Object.create(Shape.prototype);
-  Result := JsCreateObject(ShapePrototype);
+  if Self = TRectangle then
+  begin
+    ShapeCtr := JsGetProperty(JsGlobal, 'Shape');
+    ShapePrototype := JsGetProperty(ShapeCtr, 'prototype');
+    // Rectangle.prototype = Object.create(Shape.prototype);
+    Result := JsCreateObject(ShapePrototype);
+  end
+  else
+    Result := inherited InitializePrototype(AConstructor);
 end;
 
 procedure TNativeClassTestCase.TestInheritance;
@@ -498,9 +509,11 @@ begin
 
     CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'x')), 'circleObj.x before move');
     CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'y')), 'circleObj.y before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'r')), 'circleObj.r before move');
     JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], CircleObj);
     CheckEquals(20, JsNumberToInt(JsGetProperty(CircleObj, 'x')), 'circleObj.x after move');
     CheckEquals(20, JsNumberToInt(JsGetProperty(CircleObj, 'y')), 'circleObj.y after move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'r')), 'circleObj.r after move');
 
     // var rectangleObj = new Rectangle(10, 10, 60, 40);
     RectangleObj := JsNew('Rectangle', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(60), IntToJsNumber(40)]);
@@ -512,9 +525,13 @@ begin
 
     CheckEquals(10, JsNumberToInt(JsGetProperty(RectangleObj, 'x')), 'rectangleObj.x before move');
     CheckEquals(10, JsNumberToInt(JsGetProperty(RectangleObj, 'y')), 'rectangleObj.y before move');
+    CheckEquals(60, JsNumberToInt(JsGetProperty(RectangleObj, 'w')), 'rectangleObj.w before move');
+    CheckEquals(40, JsNumberToInt(JsGetProperty(RectangleObj, 'h')), 'rectangleObj.h before move');
     JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], RectangleObj);
     CheckEquals(20, JsNumberToInt(JsGetProperty(RectangleObj, 'x')), 'rectangleObj.x after move');
     CheckEquals(20, JsNumberToInt(JsGetProperty(RectangleObj, 'y')), 'rectangleObj.y after move');
+    CheckEquals(60, JsNumberToInt(JsGetProperty(RectangleObj, 'w')), 'rectangleObj.w after move');
+    CheckEquals(40, JsNumberToInt(JsGetProperty(RectangleObj, 'h')), 'rectangleObj.h after move');
 
     // var squareObj = new Square(10, 10, 20);
     SquareObj := JsNew('Square', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(20)]);
@@ -526,9 +543,146 @@ begin
 
     CheckEquals(10, JsNumberToInt(JsGetProperty(SquareObj, 'x')), 'squareObj.x before move');
     CheckEquals(10, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'sqaureObj.y before move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'w')), 'squareObj.w before move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'h')), 'squareObj.h before move');
     JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], SquareObj);
     CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'x')), 'squareObj.x after move');
     CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'squareObj.y after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'w')), 'squareObj.w after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'h')), 'squareObj.h after move');
+  finally
+    Context.Free;
+    Runtime.Free;
+  end;
+end;
+
+type
+
+  { TSquare }
+
+  TSquare = class(TRectangle)
+    class procedure InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word); override;
+  end;
+
+{ TSquare }
+
+class procedure TSquare.InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word);
+var
+  ArgsArray: PJsValueRefArray absolute Args;
+  RectangleArgs: array[0..3] of JsValueRef;
+begin
+  // Rectangle.call(this, x, y, w, w);
+  RectangleArgs[0] := ArgsArray^[0];
+  RectangleArgs[1] := ArgsArray^[1];
+  RectangleArgs[2] := ArgsArray^[2];
+  RectangleArgs[3] := ArgsArray^[2];
+  inherited InitializeInstance(AInstance, @RectangleArgs[0], 4);
+end;
+
+procedure TNativeClassTestCase.TestInheritance2;
+const
+  SScript =
+    // Shape: (Javascript) superclass
+    'function Shape(x, y) {'                                     + sLineBreak +
+    '  this.x = x;'                                              + sLineBreak +
+    '  this.y = y;'                                              + sLineBreak +
+    '}'                                                          + sLineBreak +
+                                                                   sLineBreak +
+    'Shape.prototype.move = function(x, y) {'                    + sLineBreak +
+    '  this.x += x;'                                             + sLineBreak +
+    '  this.y += y;'                                             + sLineBreak +
+    '};'                                                         + sLineBreak +
+                                                                   sLineBreak +
+    // Circle: (Javascript) subclass of (Javascript) Shape
+    'function Circle(x, y, r) {'                                 + sLineBreak +
+    '  Shape.call(this, x, y);'                                  + sLineBreak +
+    '  this.r = r;'                                              + sLineBreak +
+    '}'                                                          + sLineBreak +
+                                                                   sLineBreak +
+    'Circle.prototype = Object.create(Shape.prototype);'         + sLineBreak +
+    'Circle.prototype.constructor = Circle;';
+  SName = 'TestInheritance2.js';
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+  ShapeObj, CircleObj, RectangleObj, SquareObj: JsValueRef;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([]);
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    TRectangle.Project('Rectangle');
+    TSquare.Project('Square');
+
+    JsRunScript(SScript, SName);
+
+    // var shapeObj = new Shape(10, 10);
+    ShapeObj := JsNew('Shape', [IntToJsNumber(10), IntToJsNumber(10)]);
+    CheckValueType(JsObject, ShapeObj, 'shapeObj value type');
+    CheckTrue(JsInstanceOf(ShapeObj, 'Shape'), 'shapeObj instanceof Shape');
+    CheckFalse(JsInstanceOf(ShapeObj, 'Circle'), 'shapeObj instanceof Circle');
+    CheckFalse(JsInstanceOf(ShapeObj, 'Rectangle'), 'shapeObj instanceof Rectangle');
+    CheckFalse(JsInstanceOf(ShapeObj, 'Square'), 'shapeObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(ShapeObj, 'x')), 'shapeObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(ShapeObj, 'y')), 'shapeObj.y before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], ShapeObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(ShapeObj, 'x')), 'shapeObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(ShapeObj, 'y')), 'shapeObj.y after move');
+
+    // var circleObj = new Circle(10, 10, 10);
+    CircleObj := JsNew('Circle', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(10)]);
+    CheckValueType(JsObject, CircleObj, 'circleObj value type');
+    CheckTrue(JsInstanceOf(CircleObj, 'Shape'), 'circleObj instanceof Shape');
+    CheckTrue(JsInstanceOf(CircleObj, 'Circle'), 'circleObj instanceof Circle');
+    CheckFalse(JsInstanceOf(CircleObj, 'Rectangle'), 'circleObj instanceof Rectangle');
+    CheckFalse(JsInstanceOf(CircleObj, 'Square'), 'circleObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'x')), 'circleObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'y')), 'circleObj.y before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'r')), 'circleObj.r before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], CircleObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(CircleObj, 'x')), 'circleObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(CircleObj, 'y')), 'circleObj.y after move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(CircleObj, 'r')), 'circleObj.r after move');
+
+    // var rectangleObj = new Rectangle(10, 10, 60, 40);
+    RectangleObj := JsNew('Rectangle', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(60), IntToJsNumber(40)]);
+    CheckValueType(JsObject, RectangleObj, 'rectangleObj value type');
+    CheckTrue(JsInstanceOf(RectangleObj, 'Shape'), 'rectangleObj instanceof Shape');
+    CheckFalse(JsInstanceOf(RectangleObj, 'Circle'), 'rectangleObj instanceof Circle');
+    CheckTrue(JsInstanceOf(RectangleObj, 'Rectangle'), 'rectangleObj instanceof Rectangle');
+    CheckFalse(JsInstanceOf(RectangleObj, 'Square'), 'rectangleObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(RectangleObj, 'x')), 'rectangleObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(RectangleObj, 'y')), 'rectangleObj.y before move');
+    CheckEquals(60, JsNumberToInt(JsGetProperty(RectangleObj, 'w')), 'rectangleObj.w before move');
+    CheckEquals(40, JsNumberToInt(JsGetProperty(RectangleObj, 'h')), 'rectangleObj.h before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], RectangleObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(RectangleObj, 'x')), 'rectangleObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(RectangleObj, 'y')), 'rectangleObj.y after move');
+    CheckEquals(60, JsNumberToInt(JsGetProperty(RectangleObj, 'w')), 'rectangleObj.w after move');
+    CheckEquals(40, JsNumberToInt(JsGetProperty(RectangleObj, 'h')), 'rectangleObj.h after move');
+
+    // var squareObj = new Square(10, 10, 20);
+    SquareObj := JsNew('Square', [IntToJsNumber(10), IntToJsNumber(10), IntToJsNumber(20)]);
+    CheckValueType(JsObject, SquareObj, 'squareObj value type');
+    CheckTrue(JsInstanceOf(SquareObj, 'Shape'), 'squareObj instanceof Shape');
+    CheckFalse(JsInstanceOf(SquareObj, 'Circle'), 'squareObj instanceof Circle');
+    CheckTrue(JsInstanceOf(SquareObj, 'Rectangle'), 'squareObj instanceof Rectangle');
+    CheckTrue(JsInstanceOf(SquareObj, 'Square'), 'squareObj instanceof Square');
+
+    CheckEquals(10, JsNumberToInt(JsGetProperty(SquareObj, 'x')), 'squareObj.x before move');
+    CheckEquals(10, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'sqaureObj.y before move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'w')), 'squareObj.w before move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'h')), 'squareObj.h before move');
+    JsCallFunction('move', [IntToJsNumber(10), IntToJsNumber(10)], SquareObj);
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'x')), 'squareObj.x after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'squareObj.y after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'w')), 'squareObj.w after move');
+    CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'h')), 'squareObj.h after move');
   finally
     Context.Free;
     Runtime.Free;

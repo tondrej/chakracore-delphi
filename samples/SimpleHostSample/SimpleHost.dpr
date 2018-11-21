@@ -117,6 +117,11 @@ begin
   try
     Main;
   except
+    on E: EChakraCoreScript do
+    begin
+      ExitCode := 1;
+      Writeln(Format('%s (%d, %d): [%s] %s', [E.ScriptURL, E.Line + 1, E.Column + 1, E.ClassName, E.Message]));
+    end;
     on E: Exception do
     begin
       ExitCode := 1;

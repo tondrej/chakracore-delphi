@@ -271,19 +271,29 @@ end;
 
 constructor EChakraCoreScript.Create(AErrorCode: JsErrorCode);
 var
-  PropValue: JsValueRef;
+  PropValue, MetaData: JsValueRef;
   SException: UnicodeString;
 begin
   SException := '';
-  JsGetAndClearException(Error);
-  if JsTryGetProperty(Error, 'line', PropValue) and (JsGetValueType(PropValue) = JsNumber) then
-    Line := JsNumberToInt(PropValue);
-  if JsTryGetProperty(Error, 'column', PropValue) and (JsGetValueType(PropValue) = JsNumber) then
-    Column := JsNumberToInt(PropValue);
-  if JsTryGetProperty(Error, 'source', PropValue) and (JsGetValueType(PropValue) = JsString) then
-    Source := JsStringToUnicodeString(PropValue);
-  if JsTryGetProperty(Error, 'url', PropValue) and (JsGetValueType(PropValue) = JsString) then
-    ScriptURL := JsStringToUnicodeString(PropValue);
+  if JsGetAndClearExceptionWithMetadata(MetaData) = JsNoError then
+  begin
+    Line := JsNumberToInt(JsGetProperty(MetaData, 'line'));
+    Column := JsNumberToInt(JsGetProperty(MetaData, 'column'));
+    Source := JsStringToUnicodeString(JsGetProperty(MetaData, 'source'));
+    ScriptURL := JsStringToUnicodeString(JsGetProperty(MetaData, 'url'));
+    Error := JsGetProperty(MetaData, 'exception');
+  end
+  else if JsGetAndClearException(Error) = JsNoError then
+  begin
+    if JsTryGetProperty(Error, 'line', PropValue) and (JsGetValueType(PropValue) = JsNumber) then
+      Line := JsNumberToInt(PropValue);
+    if JsTryGetProperty(Error, 'column', PropValue) and (JsGetValueType(PropValue) = JsNumber) then
+      Column := JsNumberToInt(PropValue);
+    if JsTryGetProperty(Error, 'source', PropValue) and (JsGetValueType(PropValue) = JsString) then
+      Source := JsStringToUnicodeString(PropValue);
+    if JsTryGetProperty(Error, 'url', PropValue) and (JsGetValueType(PropValue) = JsString) then
+      ScriptURL := JsStringToUnicodeString(PropValue);
+  end;
   inherited Create(AErrorCode, Error);
   if Assigned(Error) then
     SException := JsStringToUnicodeString(Error);

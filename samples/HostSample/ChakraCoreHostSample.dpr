@@ -86,7 +86,7 @@ begin
     on E: EChakraCoreScript do
     begin
       ExitCode := 1;
-      Writeln(Format('[%s] %s (%d, %d): %s', [E.ClassName, E.ScriptURL, E.Line, E.Column, E.Message]));
+      Writeln(Format('%s (%d, %d): [%s] %s', [E.ScriptURL, E.Line + 1, E.Column + 1, E.ClassName, E.Message]));
     end;
     on E: Exception do
     begin

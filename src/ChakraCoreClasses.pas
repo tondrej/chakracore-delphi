@@ -311,10 +311,13 @@ type
     function GetContext: TChakraCoreContext;
     function GetContextHandle: JsContextRef;
   protected
-    class function ParentConstructor: JsValueRef;
+    class function FindConstructor: JsValueRef;
+    class function FindParentConstructor: JsValueRef;
+    class function FindPrototype: JsValueRef;
     class procedure InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word); virtual;
     class function InitializePrototype(AConstructor: JsValueRef): JsValueRef; virtual;
-    class function Prototype: JsValueRef;
+    class procedure RegisterClassMethod(AConstructor: JsValueRef; const AName: UnicodeString; AMethod: Pointer;
+      UseStrictRules: Boolean = True); virtual;
     class procedure RegisterMethod(AInstance: JsValueRef; const AName: UnicodeString; AMethod: Pointer;
       UseStrictRules: Boolean = True); virtual;
     class procedure RegisterMethods(AInstance: JsValueRef); virtual;
@@ -435,6 +438,7 @@ var
   NativeClass: TNativeClass absolute CallbackState;
   Context: TChakraCoreContext;
   Info: PNativeClassInfo;
+  ConstructorName: UnicodeString;
   AConstructor, APrototype: JsValueRef;
 begin
   Result := JsUndefinedValue;
@@ -445,7 +449,8 @@ begin
       Result := Info^.AConstructor
     else
     begin
-      AConstructor := JsCreateFunction(Native_ConstructorCallback, CallbackState, UnicodeString(''));
+      AConstructor := JsCreateFunction(Native_ConstructorCallback, CallbackState,
+        JsStringToUnicodeString(JsGetProperty(Callee, 'name')));
       APrototype := NativeClass.InitializePrototype(AConstructor);
       NativeClass.RegisterMethods(APrototype);
       NativeClass.RegisterProperties(APrototype);
@@ -457,6 +462,42 @@ begin
   except
     on E: Exception do
       JsThrowError(Format('[%s] %s', [E.ClassName, E.Message]));
+  end;
+end;
+
+function Native_ClassMethodCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRef;
+  ArgCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Context: TChakraCoreContext;
+  Info: PNativeClassInfo;
+  NativeMethod: TNativeMethod;
+begin
+  Result := JsUndefinedValue;
+  try
+    if IsConstructCall then
+      raise Exception.Create('Class method called as a constructor');
+
+    if not Assigned(Args) or (ArgCount = 0) then
+      raise Exception.Create('Invalid arguments');
+
+    if (JsGetValueType(Args^) <> JsFunction) then
+      raise Exception.Create('thisarg not a function');
+
+    Context := TChakraCoreContext.CurrentContext;
+    Info := Context.FindClassInfo(Args^);
+    if not Assigned(Info) then
+      raise Exception.CreateFmt('Native class not found for %s', [JsStringToUnicodeString(JsGetProperty(Args^, 'name'))]);
+
+    TMethod(NativeMethod).Code := CallbackState;
+    TMethod(NativeMethod).Data := Info^.AClass;
+
+    Inc(Args);
+    Dec(ArgCount);
+
+    Result := NativeMethod(Args, ArgCount);
+  except
+    on E: Exception do
+      JsThrowError(WideFormat('[%s] %s', [E.ClassName, E.Message]));
   end;
 end;
 
@@ -1431,11 +1472,28 @@ begin
   ChakraCoreCheck(JsGetContextOfObject(FInstance, Result));
 end;
 
-class function TNativeObject.ParentConstructor: JsValueRef;
+{ TNativeObject protected }
+
+class function TNativeObject.FindConstructor: JsValueRef;
 var
   Info: PNativeClassInfo;
 begin
   Result := nil;
+
+  if Self.ClassParent <> TNativeObject then
+  begin
+    Info := TChakraCoreContext.CurrentContext.FindClassInfo(Self);
+    if Assigned(Info) then
+      Result := Info^.AConstructor;
+  end;
+end;
+
+class function TNativeObject.FindParentConstructor: JsValueRef;
+var
+  Info: PNativeClassInfo;
+begin
+  Result := nil;
+
   if Self.ClassParent <> TNativeObject then
   begin
     Info := TChakraCoreContext.CurrentContext.FindClassInfo(TNativeClass(Self.ClassParent));
@@ -1444,16 +1502,29 @@ begin
   end;
 end;
 
+class function TNativeObject.FindPrototype: JsValueRef;
+var
+  Info: PNativeClassInfo;
+begin
+  Result := nil;
+  Info := TChakraCoreContext.CurrentContext.FindClassInfo(Self);
+  if Assigned(Info) then
+    Result := Info^.APrototype;
+end;
+
 class procedure TNativeObject.InitializeInstance(AInstance: JsValueRef; Args: PJsValueRef; ArgCount: Word);
 var
+  ParentConstructor: JsValueRef;
   ParentArgs: JsValueRefArray;
 begin
-  if Self.ClassParent <> TNativeObject then
+  ParentConstructor := FindParentConstructor;
+  if Assigned(ParentConstructor) and (Self.ClassParent <> TNativeObject) then
   begin
     // pass thisarg + args
     SetLength(ParentArgs, ArgCount + 1);
     ParentArgs[0] := AInstance;
-    Move(Args^, ParentArgs[1], ArgCount * SizeOf(JsValueRef));
+    if ArgCount > 0 then
+      Move(Args^, ParentArgs[1], ArgCount * SizeOf(JsValueRef));
     JsCallFunction(ParentConstructor, @ParentArgs[0], ArgCount + 1);
   end;
 end;
@@ -1463,19 +1534,12 @@ begin
   if Self.ClassParent = TNativeObject then
     Result := JsGetProperty(AConstructor, 'prototype')
   else
-    Result := JsCreateObject(JsGetProperty(ParentConstructor, 'prototype'));
+    Result := JsCreateObject(JsGetProperty(FindParentConstructor, 'prototype'));
 end;
 
-{ TNativeObject protected }
-
-class function TNativeObject.Prototype: JsValueRef;
-var
-  Info: PNativeClassInfo;
+class procedure TNativeObject.RegisterClassMethod(AConstructor: JsValueRef; const AName: UnicodeString; AMethod: Pointer; UseStrictRules: Boolean);
 begin
-  Result := nil;
-  Info := TChakraCoreContext.CurrentContext.FindClassInfo(Self);
-  if Assigned(Info) then
-    Result := Info^.APrototype;
+  JsSetCallback(AConstructor, AName, Native_ClassMethodCallback, AMethod, UseStrictRules);
 end;
 
 class procedure TNativeObject.RegisterMethod(AInstance: JsValueRef; const AName: UnicodeString;
@@ -1537,7 +1601,7 @@ var
 begin
   inherited Create;
   FInstance := nil;
-  APrototype := Prototype;
+  APrototype := FindPrototype;
   if Assigned(APrototype) then
   begin
     ChakraCoreCheck(JsCreateExternalObjectWithPrototype(Self, Finalizers[AFinalize], APrototype, FInstance));
@@ -1596,8 +1660,8 @@ begin
 
   if not Assigned(Scope) then
     Scope := JsGlobal;
-  JsDefineProperty(ConstructorName, True, True, JsCreateFunction(Native_GetConstructorCallback, Self,
-    UnicodeString('get' + ConstructorName)), nil, Scope);
+  JsDefineProperty(ConstructorName, True, True, JsCreateFunction(Native_GetConstructorCallback, Self, ConstructorName),
+    nil, Scope);
 end;
 
 function TNativeObject.Release: Integer;

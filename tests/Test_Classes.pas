@@ -74,6 +74,9 @@ implementation
 { TChakraCoreContextTestCase }
 
 procedure TChakraCoreContextTestCase.TestScriptReferenceError;
+const
+  SScript = 'badref.bla();';
+  SName = 'TestScriptReferenceError.js';
 var
   Runtime: TChakraCoreRuntime;
   Context: TChakraCoreContext;
@@ -85,14 +88,14 @@ begin
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     try
-      Context.RunScript('badref.bla();', 'TestScriptError.js');
+      Context.RunScript(SScript, SName);
     except
       on E: EChakraCoreScript do
       begin
         CheckEquals(0, E.Line, 'EChakraCoreScript.Line');
         CheckEquals(0, E.Column, 'EChakraCoreScript.Column');
-        CheckEquals(UnicodeString(''), E.Source, 'EChakraCoreScript.Source');
-        CheckEquals(UnicodeString(''), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(UnicodeString(SScript), E.Source, 'EChakraCoreScript.Source');
+        CheckEquals(UnicodeString(SName), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
         CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptException)) + sLineBreak +
           'ReferenceError: ''badref'' is not defined', E.Message, 'EChakraCoreScript.Message');
       end;
@@ -104,6 +107,12 @@ begin
 end;
 
 procedure TChakraCoreContextTestCase.TestScriptSyntaxError;
+const
+  SScript: array[0..1] of UnicodeString = (
+    '// first line comment',
+    '   @ bad syntax'
+  );
+  SName = 'TestScriptSyntaxError.js';
 var
   Runtime: TChakraCoreRuntime;
   Context: TChakraCoreContext;
@@ -115,17 +124,14 @@ begin
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     try
-      Context.RunScript(
-        '// first line comment' + sLineBreak +
-        '   @ bad syntax',
-        'TestScriptError.js');
+      Context.RunScript(SScript[0] + sLineBreak + SScript[1], SName);
     except
       on E: EChakraCoreScript do
       begin
         CheckEquals(1, E.Line, 'EChakraCoreScript.Line');
         CheckEquals(3, E.Column, 'EChakraCoreScript.Column');
-        CheckEquals(UnicodeString('   @ bad syntax'), E.Source, 'EChakraCoreScript.Source');
-        CheckEquals(UnicodeString('TestScriptError.js'), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(SScript[1], E.Source, 'EChakraCoreScript.Source');
+        CheckEquals(SName, E.ScriptURL, 'EChakraCoreScript.ScriptURL');
         CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptCompile)) + sLineBreak +
           'SyntaxError: Invalid character', E.Message, 'EChakraCoreScript.Message');
       end;
@@ -137,6 +143,9 @@ begin
 end;
 
 procedure TChakraCoreContextTestCase.TestEvalReferenceError;
+const
+  SScript = 'badref.bla();';
+  SName = 'TestEvalReferenceError.js';
 var
   Runtime: TChakraCoreRuntime;
   Context: TChakraCoreContext;
@@ -148,14 +157,14 @@ begin
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     try
-      Context.RunScript('eval(''badref.bla();'');', 'TestScriptError.js');
+      Context.RunScript('eval(''' + SScript + ''');', SName);
     except
       on E: EChakraCoreScript do
       begin
         CheckEquals(0, E.Line, 'EChakraCoreScript.Line');
         CheckEquals(0, E.Column, 'EChakraCoreScript.Column');
-        CheckEquals(UnicodeString(''), E.Source, 'EChakraCoreScript.Source');
-        CheckEquals(UnicodeString(''), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(SScript, E.Source, 'EChakraCoreScript.Source');
+        CheckEquals('eval code', E.ScriptURL, 'EChakraCoreScript.ScriptURL');
         CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptException)) + sLineBreak +
           'ReferenceError: ''badref'' is not defined', E.Message, 'EChakraCoreScript.Message');
       end;
@@ -167,6 +176,9 @@ begin
 end;
 
 procedure TChakraCoreContextTestCase.TestEvalSyntaxError;
+const
+  SScript = 'eval(''@ bad syntax'');';
+  SName = 'TestEvalSyntaxError.js';
 var
   Runtime: TChakraCoreRuntime;
   Context: TChakraCoreContext;
@@ -178,14 +190,14 @@ begin
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     try
-      Context.RunScript('eval(''@ bad syntax'');', 'TestScriptError.js');
+      Context.RunScript(SScript, SName);
     except
       on E: EChakraCoreScript do
       begin
         CheckEquals(0, E.Line, 'EChakraCoreScript.Line');
         CheckEquals(0, E.Column, 'EChakraCoreScript.Column');
-        CheckEquals(UnicodeString(''), E.Source, 'EChakraCoreScript.Source');
-        CheckEquals(UnicodeString(''), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(SScript, E.Source, 'EChakraCoreScript.Source');
+        CheckEquals(SName, E.ScriptURL, 'EChakraCoreScript.ScriptURL');
         CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptException)) + sLineBreak +
           'SyntaxError: Invalid character', E.Message, 'EChakraCoreScript.Message');
       end;

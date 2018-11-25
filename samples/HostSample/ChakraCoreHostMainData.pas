@@ -57,7 +57,7 @@ type
     FRuntime: TChakraCoreRuntime;
     FUseAnsiColors: Boolean;
 
-    procedure ConsolePrint(Sender: TObject; const Text: UnicodeString; Level: TInfoLevel = ilNone);
+    procedure ConsoleLog(Sender: TObject; const Text: UnicodeString; Level: TInfoLevel = ilNone);
     procedure ContextActivate(Sender: TObject);
     procedure ContextLoadModule(Sender: TObject; Module: TChakraModule);
     procedure ContextNativeObjectCreated(Sender: TObject; NativeObject: TNativeObject);
@@ -198,7 +198,7 @@ begin
   end;
 end;
 
-procedure TDataModuleMain.ConsolePrint(Sender: TObject; const Text: UnicodeString; Level: TInfoLevel);
+procedure TDataModuleMain.ConsoleLog(Sender: TObject; const Text: UnicodeString; Level: TInfoLevel);
 const
   StartBlocks: array[TInfoLevel] of RawByteString = ('', #$1b'[32;1m', #$1b'[33;1m', #$1b'[31;1m');
   EndBlocks: array[Boolean] of RawByteString = ('', #$1b'[0m');
@@ -239,18 +239,17 @@ end;
 
 procedure TDataModuleMain.ContextActivate(Sender: TObject);
 begin
-  // expose global.console
-  FConsole := TConsole.Create;
-  FConsole.OnPrint := ConsolePrint;
-  JsSetProperty(FContext.Global, 'console', FConsole.Instance);
-
   // expose additional functions
   JsSetCallback(FContext.Global, 'setTimeout', @SetTimeout_Callback, Self, True);
   JsSetCallback(FContext.Global, 'setInterval', @SetInterval_Callback, Self, True);
   JsSetCallback(FContext.Global, 'testPromise', @TestPromise_Callback, Self, True);
 
-  // project TConsole class so scripts can create instances, e.g. var console2 = new Console();
-  TConsole.Project('Console');
+  // project TConsole class so scripts can create instances, e.g. var c = new Console();
+  TConsole.Project;
+
+  // expose global.console
+  FConsole := TConsole.Create;
+  JsSetProperty(FContext.Global, 'console', FConsole.Instance);
 end;
 
 procedure TDataModuleMain.ContextLoadModule(Sender: TObject; Module: TChakraModule);
@@ -269,7 +268,7 @@ end;
 procedure TDataModuleMain.ContextNativeObjectCreated(Sender: TObject; NativeObject: TNativeObject);
 begin
   if NativeObject is TConsole then
-    TConsole(NativeObject).OnPrint := ConsolePrint;
+    TConsole(NativeObject).OnLog := ConsoleLog;
 end;
 
 procedure TDataModuleMain.DataModuleCreate(Sender: TObject);
@@ -281,7 +280,7 @@ begin
     FContext.OnLoadModule := ContextLoadModule;
     FContext.OnNativeObjectCreated := ContextNativeObjectCreated;
   except
-    FConsole := nil;
+    FreeAndNil(FConsole);
     FreeAndNil(FContext);
     FreeAndNil(FRuntime);
     raise;

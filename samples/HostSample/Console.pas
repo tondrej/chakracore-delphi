@@ -40,11 +40,13 @@ uses
 type
   TInfoLevel = (ilNone, ilInfo, ilWarn, ilError);
 
-  TConsolePrintEvent = procedure (Sender: TObject; const Text: UnicodeString; Level: TInfoLevel = ilNone) of object;
+  TConsoleLogEvent = procedure (Sender: TObject; const Text: UnicodeString; Level: TInfoLevel = ilNone) of object;
+
+  { TConsole }
 
   TConsole = class(TNativeObject)
   private
-    FOnPrint: TConsolePrintEvent;
+    FOnLog: TConsoleLogEvent;
     
     function Assert(Args: PJsValueRef; ArgCount: Word): JsValueRef;
     function LogError(Args: PJsValueRef; ArgCount: Word): JsValueRef;
@@ -52,11 +54,13 @@ type
     function LogNone(Args: PJsValueRef; ArgCount: Word): JsValueRef;
     function LogWarn(Args: PJsValueRef; ArgCount: Word): JsValueRef;
   protected
-    procedure DoPrint(const Text: UnicodeString; Level: TInfoLevel = ilNone); virtual;
-    function Log(Args: PJsValueRef; ArgCount: Word; Level: TInfoLevel): JsValueRef;
+    procedure DoLog(const Text: UnicodeString; Level: TInfoLevel = ilNone); virtual;
     class procedure RegisterMethods(AInstance: JsValueRef); override;
   public
-    property OnPrint: TConsolePrintEvent read FOnPrint write FOnPrint;
+    function Log(Args: PJsValueRef; ArgCount: Word; Level: TInfoLevel = ilNone): JsValueRef; overload;
+    function Log(const Args: array of JsValueRef; Level: TInfoLevel = ilNone): JsValueRef; overload;
+
+    property OnLog: TConsoleLogEvent read FOnLog write FOnLog;
   end;
 
 implementation
@@ -115,7 +119,7 @@ begin
     Exit;
 
   if ArgCount = 0 then // no message/data
-    DoPrint(SMessage, ilError)
+    DoLog(SMessage, ilError)
   else
     Log(Args, ArgCount, ilError);
 end;
@@ -142,11 +146,13 @@ end;
 
 { TConsole protected }
 
-procedure TConsole.DoPrint(const Text: UnicodeString; Level: TInfoLevel);
+procedure TConsole.DoLog(const Text: UnicodeString; Level: TInfoLevel);
 begin
-  if Assigned(FOnPrint) then
-    FOnPrint(Self, Text, Level);
+  if Assigned(FOnLog) then
+    FOnLog(Self, Text, Level);
 end;
+
+{ TConsole public }
 
 function TConsole.Log(Args: PJsValueRef; ArgCount: Word; Level: TInfoLevel): JsValueRef;
 var
@@ -215,7 +221,19 @@ begin
       Inc(Arg);
     end;
   end;
-  DoPrint(S, Level);
+  DoLog(S, Level);
+end;
+
+function TConsole.Log(const Args: array of JsValueRef; Level: TInfoLevel): JsValueRef;
+var
+  P: PJsValueRef;
+  L: Integer;
+begin
+  P := nil;
+  L := Length(Args);
+  if L > 0 then
+    P := @Args[0];
+  Result := Log(P, L, Level);
 end;
 
 class procedure TConsole.RegisterMethods(AInstance: JsValueRef);

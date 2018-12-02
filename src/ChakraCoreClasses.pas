@@ -438,7 +438,6 @@ var
   NativeClass: TNativeClass absolute CallbackState;
   Context: TChakraCoreContext;
   Info: PNativeClassInfo;
-  ConstructorName: UnicodeString;
   AConstructor, APrototype: JsValueRef;
 begin
   Result := JsUndefinedValue;

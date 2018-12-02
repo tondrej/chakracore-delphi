@@ -124,14 +124,14 @@ begin
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     try
-      Context.RunScript(SScript[0] + sLineBreak + SScript[1], SName);
+      Context.RunScript(SScript[0] + UnicodeString(sLineBreak) + SScript[1], UnicodeString(SName));
     except
       on E: EChakraCoreScript do
       begin
         CheckEquals(1, E.Line, 'EChakraCoreScript.Line');
         CheckEquals(3, E.Column, 'EChakraCoreScript.Column');
         CheckEquals(SScript[1], E.Source, 'EChakraCoreScript.Source');
-        CheckEquals(SName, E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(UnicodeString(SName), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
         CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptCompile)) + sLineBreak +
           'SyntaxError: Invalid character', E.Message, 'EChakraCoreScript.Message');
       end;
@@ -163,8 +163,8 @@ begin
       begin
         CheckEquals(0, E.Line, 'EChakraCoreScript.Line');
         CheckEquals(0, E.Column, 'EChakraCoreScript.Column');
-        CheckEquals(SScript, E.Source, 'EChakraCoreScript.Source');
-        CheckEquals('eval code', E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(UnicodeString(SScript), E.Source, 'EChakraCoreScript.Source');
+        CheckEquals(UnicodeString('eval code'), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
         CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptException)) + sLineBreak +
           'ReferenceError: ''badref'' is not defined', E.Message, 'EChakraCoreScript.Message');
       end;
@@ -196,8 +196,8 @@ begin
       begin
         CheckEquals(0, E.Line, 'EChakraCoreScript.Line');
         CheckEquals(0, E.Column, 'EChakraCoreScript.Column');
-        CheckEquals(SScript, E.Source, 'EChakraCoreScript.Source');
-        CheckEquals(SName, E.ScriptURL, 'EChakraCoreScript.ScriptURL');
+        CheckEquals(UnicodeString(SScript), E.Source, 'EChakraCoreScript.Source');
+        CheckEquals(UnicodeString(SName), E.ScriptURL, 'EChakraCoreScript.ScriptURL');
         CheckEquals(LoadResString(JsGetErrorMessage(JsErrorScriptException)) + sLineBreak +
           'SyntaxError: Invalid character', E.Message, 'EChakraCoreScript.Message');
       end;

@@ -866,9 +866,7 @@ end;
 function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef;
   ThisArg: JsValueRef): JsValueRef;
 var
-  L: Integer;
   Func: JsValueRef;
-  NewArgs: array of JsValueRef;
 begin
   if not Assigned(ThisArg) then
     ThisArg := JsGlobal;

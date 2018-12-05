@@ -96,6 +96,7 @@ type
     procedure TestThrowHostError;
     procedure TestCallFunction01;
     procedure TestCallFunction02;
+    procedure TestCallFunction03;
     procedure TestCallFunctions;
     procedure TestCallNew;
     procedure TestFPExceptions;
@@ -778,7 +779,7 @@ begin
 
     ChakraCoreCheck(JsGetGlobalObject(Global));
     SquareFunc := JsGetProperty(Global, 'square');
-    Result := JsCallFunction(SquareFunc, [Global, IntToJsNumber(3)]);
+    Result := JsCallFunction(SquareFunc, [IntToJsNumber(3)]);
 
     CheckValueType(JsNumber, Result, 'result type');
     CheckEquals(9, JsNumberToInt(Result), 'result value');
@@ -801,6 +802,28 @@ begin
       JsRunScript(UTF8String(SScript), UTF8String(SName));
 
     Result := JsCallFunction('square', [IntToJsNumber(3)]);
+
+    CheckValueType(JsNumber, Result, 'result type');
+    CheckEquals(9, JsNumberToInt(Result), 'result value');
+  end;
+end;
+
+procedure TChakraCoreUtilsScripting.TestCallFunction03;
+const
+  SScript = 'var obj = {}; obj.square = function square(number) { return number * number; }';
+  SName = 'TestCallFunction02.js';
+var
+  Unicode: Boolean;
+  Result: JsValueRef;
+begin
+  for Unicode := False to True do
+  begin
+    if Unicode then
+      JsRunScript(UnicodeString(SScript), UnicodeString(SName))
+    else
+      JsRunScript(UTF8String(SScript), UTF8String(SName));
+
+    Result := JsCallFunction('square', [IntToJsNumber(3)], JsGetProperty(JsGlobal, UnicodeString('obj')));
 
     CheckValueType(JsNumber, Result, 'result type');
     CheckEquals(9, JsNumberToInt(Result), 'result value');
@@ -930,7 +953,7 @@ begin
       Result := ArgsArray^[0];
 
     // Shape.call(x, y);
-    JsCallFunction(ShapeCtr, [Result, ArgsArray^[1], ArgsArray^[2]]);
+    JsCallFunction(ShapeCtr, [ArgsArray^[1], ArgsArray^[2]], Result);
 
     // this.w = w;
     JsSetProperty(Result, UnicodeString('w'), ArgsArray^[3]);

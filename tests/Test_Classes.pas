@@ -419,8 +419,8 @@ begin
   if Self = TRectangle then
   begin
     // Shape.call(x, y);
-    ShapeCtr := JsGetProperty(JsGlobal, 'Shape'); // TODO scope?
-    JsCallFunction(ShapeCtr, [AInstance, ArgsArray^[0], ArgsArray^[1]]);
+    ShapeCtr := JsGetProperty(JsGlobal, 'Shape');
+    JsCallFunction(ShapeCtr, [ArgsArray^[0], ArgsArray^[1]], AInstance);
 
     // this.w = w;
     JsSetProperty(AInstance, UnicodeString('w'), ArgsArray^[2]);

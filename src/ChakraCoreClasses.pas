@@ -254,11 +254,12 @@ type
     procedure AddModule(const AName: UTF8String); overload;
     procedure AddModule(const AName: UnicodeString); overload;
     function CallFunction(Func: JsValueRef; Args: PJsValueRef; ArgCount: Word): JsValueRef; overload;
-    function CallFunction(Func: JsValueRef; const Args: array of JsValueRef): JsValueRef; overload;
+    function CallFunction(Func: JsValueRef; const Args: array of JsValueRef; ThisArg: JsValueRef = nil): JsValueRef;
+      overload;
     function CallFunction(const AName: UTF8String; const Args: array of JsValueRef;
-      Instance: JsValueRef = nil): JsValueRef; overload;
+      ThisArg: JsValueRef = nil): JsValueRef; overload;
     function CallFunction(const AName: UnicodeString; const Args: array of JsValueRef;
-      Instance: JsValueRef = nil): JsValueRef; overload;
+      ThisArg: JsValueRef = nil): JsValueRef; overload;
     function CallNew(const AConstructorName: UTF8String; const Args: array of JsValueRef): JsValueRef; overload;
     function CallNew(const AConstructorName: UnicodeString; const Args: array of JsValueRef): JsValueRef; overload;
     class function CurrentContext: TChakraCoreContext;
@@ -1336,23 +1337,24 @@ begin
   ProcessMessages;
 end;
 
-function TChakraCoreContext.CallFunction(Func: JsValueRef; const Args: array of JsValueRef): JsValueRef;
+function TChakraCoreContext.CallFunction(Func: JsValueRef; const Args: array of JsValueRef;
+  ThisArg: JsValueRef): JsValueRef;
 begin
-  Result := JsCallFunction(Func, Args);
+  Result := JsCallFunction(Func, Args, ThisArg);
   ProcessMessages;
 end;
 
 function TChakraCoreContext.CallFunction(const AName: UTF8String; const Args: array of JsValueRef;
-  Instance: JsValueRef): JsValueRef;
+  ThisArg: JsValueRef): JsValueRef;
 begin
-  Result := JsCallFunction(AName, Args, Instance);
+  Result := JsCallFunction(AName, Args, ThisArg);
   ProcessMessages;
 end;
 
 function TChakraCoreContext.CallFunction(const AName: UnicodeString; const Args: array of JsValueRef;
-  Instance: JsValueRef): JsValueRef;
+  ThisArg: JsValueRef): JsValueRef;
 begin
-  Result := CallFunction(UTF8Encode(AName), Args, Instance);
+  Result := CallFunction(UTF8Encode(AName), Args, ThisArg);
 end;
 
 function TChakraCoreContext.CallNew(const AConstructorName: UTF8String; const Args: array of JsValueRef): JsValueRef;

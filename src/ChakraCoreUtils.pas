@@ -101,13 +101,13 @@ function JsInspectObject(Value: JsValueRef): UnicodeString;
 function JsContextOf(Instance: JsValueRef): JsContextRef;
 function JsGlobal: JsValueRef;
 function JsGetPrototype(Instance: JsValueRef): JsValueRef;
-function JsInstanceOf(Instance: JsValueRef; const ConstructorName: UnicodeString; Scope: JsValueRef = nil): Boolean;
+function JsInstanceOf(Instance: JsValueRef; const ConstructorName: UnicodeString; ThisArg: JsValueRef = nil): Boolean;
   overload;
 function JsInstanceOf(Instance, AConstructor: JsValueRef): Boolean; overload;
-function JsNew(const ConstructorName: UTF8String; const Args: array of JsValueRef; Scope: JsValueRef = nil): JsValueRef;
-    overload;
+function JsNew(const ConstructorName: UTF8String; const Args: array of JsValueRef;
+  ThisArg: JsValueRef = nil): JsValueRef; overload;
 function JsNew(const ConstructorName: UnicodeString; const Args: array of JsValueRef;
-  Scope: JsValueRef = nil): JsValueRef; overload;
+  ThisArg: JsValueRef = nil): JsValueRef; overload;
 function JsNew(AConstructor, ACallee: JsValueRef; const Args: array of JsValueRef): JsValueRef; overload;
 
 function JsValueAsJsBoolean(Value: JsValueRef): JsValueRef;
@@ -126,12 +126,15 @@ function JsGetExternalData(Value: JsValueRef): Pointer;
 procedure JsSetExternalData(Value: JsValueRef; Data: Pointer);
 function JsGetValueType(Value: JsValueRef): JsValueType;
 function JsGetTypedArrayType(Value: JsValueRef): JsTypedArrayType;
+
 function JsCallFunction(Func: JsValueRef; Args: PJsValueRef; ArgCount: Word): JsValueRef; overload;
-function JsCallFunction(Func: JsValueRef; const Args: array of JsValueRef): JsValueRef; overload;
+function JsCallFunction(Func: JsValueRef; const Args: array of JsValueRef; ThisArg: JsValueRef = nil): JsValueRef;
+  overload;
 function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef;
-  Scope: JsValueRef = nil): JsValueRef; overload;
+  ThisArg: JsValueRef = nil): JsValueRef; overload;
 function JsCallFunction(const FunctionName: UnicodeString; const Args: array of JsValueRef;
-  Scope: JsValueRef = nil): JsValueRef; overload;
+  ThisArg: JsValueRef = nil): JsValueRef; overload;
+
 function JsGetProperty(Value, Prop: JsValueRef): JsValueRef; overload;
 function JsGetProperty(Value: JsValueRef; PropId: JsPropertyIdRef): JsValueRef; overload;
 function JsGetProperty(Value: JsValueRef; const PropName: UTF8String): JsValueRef; overload;
@@ -603,11 +606,11 @@ begin
   ChakraCoreCheck(ChakraCommon.JsGetPrototype(Instance, Result));
 end;
 
-function JsInstanceOf(Instance: JsValueRef; const ConstructorName: UnicodeString; Scope: JsValueRef): Boolean;
+function JsInstanceOf(Instance: JsValueRef; const ConstructorName: UnicodeString; ThisArg: JsValueRef): Boolean;
 begin
-  if not Assigned(Scope) then
-    Scope := JsGlobal;
-  Result := JsInstanceOf(Instance, JsGetProperty(Scope, ConstructorName));
+  if not Assigned(ThisArg) then
+    ThisArg := JsGlobal;
+  Result := JsInstanceOf(Instance, JsGetProperty(ThisArg, ConstructorName));
 end;
 
 function JsInstanceOf(Instance, AConstructor: JsValueRef): Boolean;
@@ -618,23 +621,23 @@ begin
   Result := B;
 end;
 
-function JsNew(const ConstructorName: UTF8String; const Args: array of JsValueRef; Scope: JsValueRef): JsValueRef;
+function JsNew(const ConstructorName: UTF8String; const Args: array of JsValueRef; ThisArg: JsValueRef): JsValueRef;
 var
   AConstructor: JsValueRef;
 begin
-  if not Assigned(Scope) then
-    Scope := JsGlobal;
-  AConstructor := JsGetProperty(Scope, ConstructorName);
+  if not Assigned(ThisArg) then
+    ThisArg := JsGlobal;
+  AConstructor := JsGetProperty(ThisArg, ConstructorName);
   Result := JsNew(AConstructor, AConstructor, Args);
 end;
 
-function JsNew(const ConstructorName: UnicodeString; const Args: array of JsValueRef; Scope: JsValueRef): JsValueRef;
+function JsNew(const ConstructorName: UnicodeString; const Args: array of JsValueRef; ThisArg: JsValueRef): JsValueRef;
 var
   AConstructor: JsValueRef;
 begin
-  if not Assigned(Scope) then
-    Scope := JsGlobal;
-  AConstructor := JsGetProperty(Scope, ConstructorName);
+  if not Assigned(ThisArg) then
+    ThisArg := JsGlobal;
+  AConstructor := JsGetProperty(ThisArg, ConstructorName);
   Result := JsNew(AConstructor, AConstructor, Args);
 end;
 
@@ -844,39 +847,39 @@ begin
   ChakraCoreCheck(ChakraCommon.JsCallFunction(Func, Args, ArgCount, @Result));
 end;
 
-function JsCallFunction(Func: JsValueRef; const Args: array of JsValueRef): JsValueRef;
+function JsCallFunction(Func: JsValueRef; const Args: array of JsValueRef; ThisArg: JsValueRef): JsValueRef;
 var
-  PArg: PJsValueRef;
-  Len: Integer;
+  L: Integer;
+  NewArgs: array of JsValueRef;
 begin
-  PArg := nil;
-  Len := Length(Args);
-  if Len > 0 then
-    PArg := @Args[0];
-  Result := JsCallFunction(Func, PArg, Len);
+  if not Assigned(ThisArg) then
+    ThisArg := JsGlobal;
+
+  L := Length(Args);
+  SetLength(NewArgs, L + 1);
+  NewArgs[0] := ThisArg;
+  if L > 0 then
+    Move(Args[0], NewArgs[1], L * SizeOf(JsValueRef));
+  Result := JsCallFunction(Func, @NewArgs[0], L + 1);
 end;
 
-function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef; Scope: JsValueRef): JsValueRef;
+function JsCallFunction(const FunctionName: UTF8String; const Args: array of JsValueRef;
+  ThisArg: JsValueRef): JsValueRef;
 var
   L: Integer;
   Func: JsValueRef;
   NewArgs: array of JsValueRef;
 begin
-  if not Assigned(Scope) then
-    Scope := JsGlobal;
-  Func := JsGetProperty(Scope, FunctionName);
-  L := Length(Args);
-  SetLength(NewArgs, L + 1);
-  NewArgs[0] := Scope;
-  if L > 0 then
-    Move(Args[0], NewArgs[1], L * SizeOf(JsValueRef));
-  Result := JsCallFunction(Func, NewArgs);
+  if not Assigned(ThisArg) then
+    ThisArg := JsGlobal;
+  Func := JsGetProperty(ThisArg, FunctionName);
+  Result := JsCallFunction(Func, Args, ThisArg);
 end;
 
 function JsCallFunction(const FunctionName: UnicodeString; const Args: array of JsValueRef;
-  Scope: JsValueRef): JsValueRef;
+  ThisArg: JsValueRef): JsValueRef;
 begin
-  Result := JsCallFunction(UTF8Encode(FunctionName), Args, Scope);
+  Result := JsCallFunction(UTF8Encode(FunctionName), Args, ThisArg);
 end;
 
 function JsGetProperty(Value, Prop: JsValueRef): JsValueRef;

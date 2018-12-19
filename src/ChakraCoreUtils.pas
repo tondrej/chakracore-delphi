@@ -83,6 +83,10 @@ function StringToJsString(const S: UnicodeString): JsValueRef; overload;
 function JsEscapeString(const S: UTF8String): UTF8String; overload;
 function JsEscapeString(const S: UnicodeString): UnicodeString; overload;
 
+function JsCreateArray(Length: Integer): JsValueRef;
+function JsArrayLength(Value: JsValueRef): Integer;
+function JsArrayGetElement(Value: JsValueRef; Index: Integer): JsValueRef;
+procedure JsArraySetElement(Value: JsValueRef; Index: Integer; ElementValue: JsValueRef);
 function StringsToJsArray(const Strings: array of UnicodeString): JsValueRef; overload;
 function StringsToJsArray(const Strings: array of UTF8String): JsValueRef; overload;
 
@@ -408,14 +412,34 @@ begin
   Result := WideStringReplace(Result, '''', '\''', [rfReplaceAll]);
 end;
 
+function JsCreateArray(Length: Integer): JsValueRef;
+begin
+  ChakraCoreCheck(ChakraCommon.JsCreateArray(Length, Result));
+end;
+
+function JsArrayLength(Value: JsValueRef): Integer;
+begin
+  Result := JsNumberToInt(JsGetProperty(Value, 'length'));
+end;
+
+function JsArrayGetElement(Value: JsValueRef; Index: Integer): JsValueRef;
+begin
+  ChakraCoreCheck(JsGetIndexedProperty(Value, IntToJsNumber(Index), Result));
+end;
+
+procedure JsArraySetElement(Value: JsValueRef; Index: Integer; ElementValue: JsValueRef);
+begin
+  ChakraCoreCheck(JsSetIndexedProperty(Value, IntToJsNumber(Index), ElementValue));
+end;
+
 function StringsToJsArray(const Strings: array of UnicodeString): JsValueRef;
 var
   L, I: Integer;
 begin
   L := Length(Strings);
-  ChakraCoreCheck(JsCreateArray(L, Result));
+  Result := JsCreateArray(L);
   for I := 0 to L - 1 do
-    JsSetIndexedProperty(Result, IntToJsNumber(I), StringToJsString(Strings[I]));
+    JsArraySetElement(Result, I, StringToJsString(Strings[I]));
 end;
 
 function StringsToJsArray(const Strings: array of UTF8String): JsValueRef;
@@ -423,9 +447,9 @@ var
   L, I: Integer;
 begin
   L := Length(Strings);
-  ChakraCoreCheck(JsCreateArray(L, Result));
+  Result := JsCreateArray(L);
   for I := 0 to L - 1 do
-    JsSetIndexedProperty(Result, IntToJsNumber(I), StringToJsString(Strings[I]));
+    JsArraySetElement(Result, I, StringToJsString(Strings[I]));
 end;
 
 function JsBooleanToBoolean(Value: JsValueRef): Boolean;
@@ -482,16 +506,15 @@ end;
 
 procedure JsEnumArray(Value: JsValueRef; EnumFunc: TJsEnumArrayFunc; Data: Pointer);
 var
-  I, L: Integer;
+  I: Integer;
   ElementValue: JsValueRef;
 begin
   if JsGetValueType(Value) <> JsArray then
     Exit;
 
-  L := JsNumberToInt(JsGetProperty(Value, 'length'));
-  for I := 0 to L - 1 do
+  for I := 0 to JsArrayLength(Value) - 1 do
   begin
-    ChakraCoreCheck(JsGetIndexedProperty(Value, IntToJsNumber(I), ElementValue));
+    ElementValue := JsArrayGetElement(Value, I);
     if EnumFunc(Value, I, ElementValue, Data) then
       Break;
   end;

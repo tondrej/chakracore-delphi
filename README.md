@@ -1,4 +1,8 @@
 # chakracore-delphi
+
+[![Licensed under the MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tondrej/chakracore-delphi/blob/master/LICENSE)
+![PR's Welcome](https://img.shields.io/badge/PRs%20-welcome-brightgreen.svg)
+
 [Delphi](https://www.embarcadero.com/products/delphi) and [Free Pascal](https://www.freepascal.org) bindings and classes for Microsoft's [ChakraCore](https://github.com/Microsoft/ChakraCore) library.
 
 ChakraCore version: **1.11.4**

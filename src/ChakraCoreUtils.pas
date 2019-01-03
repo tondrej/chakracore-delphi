@@ -162,6 +162,10 @@ function JsDefineProperty(const PropName: UTF8String; Configurable, Enumerable: 
 function JsDefineProperty(const PropName: UnicodeString; Configurable, Enumerable: Boolean;
   GetAccessor, SetAccessor: JsValueRef; Scope: JsValueRef = nil; UseStrictRules: Boolean = True): Boolean; overload;
 
+function JsParseScript(const Script, Name: UTF8String; SourceContext: NativeUInt = 0;
+  IsLibraryCode: Boolean = False): JsValueRef; overload;
+function JsParseScript(const Script, Name: UnicodeString; SourceContext: NativeUInt = 0;
+  IsLibraryCode: Boolean = False): JsValueRef; overload;
 function JsRunScript(const Script, Name: UTF8String; SourceContext: NativeUInt = 0;
   IsLibraryCode: Boolean = False): JsValueRef; overload;
 function JsRunScript(const Script, Name: UnicodeString; SourceContext: NativeUInt = 0;
@@ -1056,6 +1060,30 @@ begin
     UseStrictRules);
 end;
 
+function JsParseScript(const Script, Name: UTF8String; SourceContext: NativeUInt; IsLibraryCode: Boolean): JsValueRef;
+const
+  ParseScriptAttributes: array[Boolean] of JsParseScriptAttributes = ([], [JsParseScriptAttributeLibraryCode]);
+var
+  ScriptName, ScriptSource: JsValueRef;
+begin
+  ScriptName := StringToJsString(Name);
+  ChakraCoreCheck(JsCreateExternalArrayBuffer(Pointer(Script), Length(Script), nil, nil, ScriptSource));
+  ChakraCoreCheck(JsParse(ScriptSource, SourceContext, ScriptName, ParseScriptAttributes[IsLibraryCode], Result));
+end;
+
+function JsParseScript(const Script, Name: UnicodeString; SourceContext: NativeUInt; IsLibraryCode: Boolean): JsValueRef;
+const
+  ParseScriptAttributes: array[Boolean] of JsParseScriptAttributes = ([JsParseScriptAttributeArrayBufferIsUtf16Encoded],
+    [JsParseScriptAttributeLibraryCode, JsParseScriptAttributeArrayBufferIsUtf16Encoded]);
+var
+  ScriptName, ScriptSource: JsValueRef;
+begin
+  ScriptName := StringToJsString(Name);
+  ChakraCoreCheck(JsCreateExternalArrayBuffer(Pointer(PUnicodeChar(Script)), Length(Script) * SizeOf(UnicodeChar),
+    nil, nil, ScriptSource));
+  ChakraCoreCheck(JsParse(ScriptSource, SourceContext, ScriptName, ParseScriptAttributes[IsLibraryCode], Result));
+end;
+
 function JsRunScript(const Script, Name: UTF8String; SourceContext: NativeUInt; IsLibraryCode: Boolean): JsValueRef;
 const
   ParseScriptAttributes: array[Boolean] of JsParseScriptAttributes = ([], [JsParseScriptAttributeLibraryCode]);
@@ -1075,7 +1103,7 @@ var
   ScriptName, ScriptSource: JsValueRef;
 begin
   ScriptName := StringToJsString(Name);
-  ChakraCoreCheck(JsCreateExternalArrayBuffer(Pointer(PUnicodeChar(Script)), (Length(Script)) * SizeOf(UnicodeChar),
+  ChakraCoreCheck(JsCreateExternalArrayBuffer(Pointer(PUnicodeChar(Script)), Length(Script) * SizeOf(UnicodeChar),
     nil, nil, ScriptSource));
   ChakraCoreCheck(JsRun(ScriptSource, SourceContext, ScriptName, ParseScriptAttributes[IsLibraryCode], Result));
 end;

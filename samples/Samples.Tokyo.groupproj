@@ -15,6 +15,9 @@
         <Projects Include="HostSample\ChakraCoreHostSample.Tokyo.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="WasmSample\WasmSample.Tokyo.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -59,14 +62,23 @@
     <Target Name="ChakraCoreHostSample_Tokyo:Make">
         <MSBuild Projects="HostSample\ChakraCoreHostSample.Tokyo.dproj" Targets="Make"/>
     </Target>
+    <Target Name="WasmSample_Tokyo">
+        <MSBuild Projects="HostSample\WasmSample.Tokyo.dproj"/>
+    </Target>
+    <Target Name="WasmSample_Tokyo:Clean">
+        <MSBuild Projects="HostSample\WasmSample.Tokyo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="WasmSample_Tokyo:Make">
+        <MSBuild Projects="HostSample\WasmSample.Tokyo.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="ChakraCoreTests_Tokyo;ChakraCoreTestsUI_Tokyo;SimpleHost_Tokyo;ChakraCoreHostSample_Tokyo"/>
+        <CallTarget Targets="ChakraCoreTests_Tokyo;ChakraCoreTestsUI_Tokyo;SimpleHost_Tokyo;ChakraCoreHostSample_Tokyo;WasmSample_Tokyo"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="ChakraCoreTests_Tokyo:Clean;ChakraCoreTestsUI_Tokyo:Clean;SimpleHost_Tokyo:Clean;ChakraCoreHostSample_Tokyo:Clean"/>
+        <CallTarget Targets="ChakraCoreTests_Tokyo:Clean;ChakraCoreTestsUI_Tokyo:Clean;SimpleHost_Tokyo:Clean;ChakraCoreHostSample_Tokyo:Clean;WasmSample_Tokyo:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="ChakraCoreTests_Tokyo:Make;ChakraCoreTestsUI_Tokyo:Make;SimpleHost_Tokyo:Make;ChakraCoreHostSample_Tokyo:Make"/>
+        <CallTarget Targets="ChakraCoreTests_Tokyo:Make;ChakraCoreTestsUI_Tokyo:Make;SimpleHost_Tokyo:Make;ChakraCoreHostSample_Tokyo:Make;WasmSample_Tokyo:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

@@ -86,7 +86,7 @@
 						<VersionInfoKeys Name="FileDescription"/>
 						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName">hostsample</VersionInfoKeys>
-						<VersionInfoKeys Name="LegalCopyright">© 2018 Ondrej Kelle</VersionInfoKeys>
+						<VersionInfoKeys Name="LegalCopyright">© 2019 Ondrej Kelle</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename">hostsample.exe</VersionInfoKeys>
 						<VersionInfoKeys Name="ProductName">chakracore-delphi</VersionInfoKeys>

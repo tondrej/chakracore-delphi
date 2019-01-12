@@ -42,7 +42,7 @@
     <PropertyGroup Condition="'$(Base)'!=''">
         <DCC_ConsoleTarget>true</DCC_ConsoleTarget>
         <DCC_K>false</DCC_K>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreTests;LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTests;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreTests;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTests;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
         <DCC_N>true</DCC_N>
         <DCC_S>false</DCC_S>
@@ -127,7 +127,7 @@
                     <VersionInfoKeys Name="FileDescription"/>
                     <VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
                     <VersionInfoKeys Name="InternalName">ChakraCoreTests</VersionInfoKeys>
-                    <VersionInfoKeys Name="LegalCopyright">© 2018 Ondrej Kelle</VersionInfoKeys>
+                    <VersionInfoKeys Name="LegalCopyright">© 2019 Ondrej Kelle</VersionInfoKeys>
                     <VersionInfoKeys Name="LegalTrademarks"/>
                     <VersionInfoKeys Name="OriginalFilename">ChakraCoreTests</VersionInfoKeys>
                     <VersionInfoKeys Name="ProductName">chakracore-delphi</VersionInfoKeys>

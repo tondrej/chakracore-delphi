@@ -99,7 +99,7 @@
         <SanitizedProjectName>ChakraCoreTests_Tokyo</SanitizedProjectName>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreTests;LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTests;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreTests;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTests;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <Icns_MainIcns>$(BDS)\bin\delphi_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
@@ -148,7 +148,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_iOSDevice64)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreTests;LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTests;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=;CFBundleVersion=1.0.0</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreTests;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTests;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=;CFBundleVersion=1.0.0</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_iOSSimulator)'!=''">
         <VerInfo_Keys>CFBundleName=$(MSBuildProjectName);CFBundleDevelopmentRegion=en;CFBundleDisplayName=$(MSBuildProjectName);CFBundleIdentifier=$(MSBuildProjectName);CFBundleInfoDictionaryVersion=7.1;CFBundleVersion=1.0.0.0;CFBundlePackageType=APPL;CFBundleSignature=????;LSRequiresIPhoneOS=true;CFBundleAllowMixedLocalizations=YES;CFBundleExecutable=$(MSBuildProjectName);UIDeviceFamily=iPhone &amp; iPad;CFBundleResourceSpecification=ResourceRules.plist;NSLocationAlwaysUsageDescription=The reason for accessing the location information of the user;NSLocationWhenInUseUsageDescription=The reason for accessing the location information of the user;FMLocalNotificationPermission=false;UIBackgroundModes=;NSContactsUsageDescription=The reason for accessing the contacts;NSPhotoLibraryUsageDescription=The reason for accessing the photo library;NSCameraUsageDescription=The reason for accessing the camera</VerInfo_Keys>
@@ -171,12 +171,12 @@
         <Debugger_Launcher>/usr/bin/xterm -e &quot;%debuggee%&quot;</Debugger_Launcher>
         <Manifest_File>(None)</Manifest_File>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreTests;LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTests;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=;CFBundleVersion=1.0.0</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreTests;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTests;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=;CFBundleVersion=1.0.0</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=$(MSBuildProjectName);LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=$(MSBuildProjectName);ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=$(MSBuildProjectName);LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=$(MSBuildProjectName);ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName)</VerInfo_Keys>
         <Icon_MainIcon>ChakraCoreTests_Icon.ico</Icon_MainIcon>
         <Manifest_File>(None)</Manifest_File>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
@@ -185,7 +185,7 @@
         <Icon_MainIcon>ChakraCoreTests_Icon.ico</Icon_MainIcon>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=$(MSBuildProjectName);LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=$(MSBuildProjectName);ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=$(MSBuildProjectName);LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=$(MSBuildProjectName);ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <Manifest_File>(None)</Manifest_File>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
     </PropertyGroup>

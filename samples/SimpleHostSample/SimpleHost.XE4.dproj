@@ -46,7 +46,7 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1031</VerInfo_Locale>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=hostsample;LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=hostsample.exe;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=hostsample;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=hostsample.exe;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_DependencyCheckOutputName>SimpleHost.exe</DCC_DependencyCheckOutputName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
@@ -122,7 +122,7 @@
                     <VersionInfoKeys Name="FileDescription"/>
                     <VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
                     <VersionInfoKeys Name="InternalName">hostsample</VersionInfoKeys>
-                    <VersionInfoKeys Name="LegalCopyright">© 2018 Ondrej Kelle</VersionInfoKeys>
+                    <VersionInfoKeys Name="LegalCopyright">© 2019 Ondrej Kelle</VersionInfoKeys>
                     <VersionInfoKeys Name="LegalTrademarks"/>
                     <VersionInfoKeys Name="OriginalFilename">hostsample.exe</VersionInfoKeys>
                     <VersionInfoKeys Name="ProductName">chakracore-delphi</VersionInfoKeys>

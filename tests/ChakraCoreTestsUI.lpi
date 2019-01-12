@@ -12,7 +12,7 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
-      <StringTable InternalName="ChakraCoreTestsUI" LegalCopyright="© 2018 Ondrej Kelle" OriginalFilename="ChakraCoreTestsUI" ProductName="chakracore-delphi"/>
+      <StringTable InternalName="ChakraCoreTestsUI" LegalCopyright="© 2019 Ondrej Kelle" OriginalFilename="ChakraCoreTestsUI" ProductName="chakracore-delphi"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>

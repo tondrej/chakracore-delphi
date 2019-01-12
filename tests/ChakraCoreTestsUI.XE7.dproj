@@ -55,7 +55,7 @@
         <DCC_ImageBase>00400000</DCC_ImageBase>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTestsUI;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTestsUI;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_DcuOutput>..\lib\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>..\bin\$(Platform)\$(Config)</DCC_ExeOutput>
     </PropertyGroup>

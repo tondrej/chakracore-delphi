@@ -15,7 +15,7 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
-      <StringTable InternalName="ChakraCoreHostSample" LegalCopyright="© 2018 Ondrej Kelle" OriginalFilename="ChakraCoreHostSample"/>
+      <StringTable InternalName="ChakraCoreHostSample" LegalCopyright="© 2019 Ondrej Kelle" OriginalFilename="ChakraCoreHostSample"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>

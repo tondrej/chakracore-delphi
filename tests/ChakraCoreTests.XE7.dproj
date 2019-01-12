@@ -55,7 +55,7 @@
         <DCC_UsePackage>vcl;rtl;vclx;indy;inet;xmlrtl;vclie;inetdbbde;inetdbxpress;dbrtl;dsnap;dsnapcon;vcldb;soaprtl;VclSmp;dbexpress;dbxcds;inetdb;bdertl;vcldbx;webdsnap;websnap;adortl;ibxpress;teeui;teedb;tee;dss;visualclx;visualdbclx;vclactnband;vclshlctrls;IntrawebDB_50_70;Intraweb_50_70;Rave50CLX;Rave50VCL;dclOfficeXP;JclDeveloperTools;Jcl;JclVcl;JclContainers;$(DCC_UsePackage)</DCC_UsePackage>
         <SanitizedProjectName>ChakraCoreTests_XE7</SanitizedProjectName>
         <DCC_DebugInformation>1</DCC_DebugInformation>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreTests;LegalCopyright=© 2018 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTests;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=ChakraCoreTests;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=ChakraCoreTests;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_UnitSearchPath>..\src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_S>false</DCC_S>
         <Icon_MainIcon>ChakraCoreTests_Icon.ico</Icon_MainIcon>

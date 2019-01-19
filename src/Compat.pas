@@ -72,6 +72,12 @@ type
   UnicodeString = WideString;
 {$endif}
 
+{$ifdef DELPHI}
+function UnicodeFormat(const Format: UnicodeString; const Args: array of const): UnicodeString;
+function UnicodeSameText(const S1, S2: UnicodeString): Boolean;
+function UnicodeStringReplace(const S, OldPattern, NewPattern: UnicodeString; Flags: TReplaceFlags): UnicodeString;
+{$endif DELPHI}
+
 function GetBuildInfoString: string;
 function GetExeFileVersionString: string;
 
@@ -96,7 +102,7 @@ function WideStringReplace(const S, OldPattern, NewPattern: Widestring; Flags: T
 var
   UTF8ToString: function(const S: UTF8String): WideString;
 {$endif}
-{$endif}
+{$endif DELPHI}
 
 implementation
 
@@ -189,6 +195,35 @@ begin
   end;
 end;
 {$endif}
+
+{$ifdef DELPHI}
+function UnicodeFormat(const Format: UnicodeString; const Args: array of const): UnicodeString;
+begin
+{$ifdef UNICODE}
+  Result := SysUtils.Format(Format, Args);
+{$else}
+  Result := WideFormat(Format, Args);
+{$endif}
+end;
+
+function UnicodeSameText(const S1, S2: UnicodeString): Boolean;
+begin
+{$ifdef UNICODE}
+  Result := SameText(S1, S2);
+{$else}
+  Result := WideSameText(S1, S2);
+{$endif}
+end;
+
+function UnicodeStringReplace(const S, OldPattern, NewPattern: UnicodeString; Flags: TReplaceFlags): UnicodeString;
+begin
+{$ifdef UNICODE}
+  Result := StringReplace(S, OldPattern, NewPattern, Flags);
+{$ELSE}
+  Result := WideStringReplace(S, OldPattern, NewPattern, Flags);
+{$ENDIF}
+end;
+{$endif DELPHI}
 
 {$ifdef DELPHIXE2_UP}
 const

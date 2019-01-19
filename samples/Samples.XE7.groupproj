@@ -18,6 +18,9 @@
         <Projects Include="WasmSample\WasmSample.XE7.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="NodeSample\NodeSample.XE7.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -66,19 +69,28 @@
         <MSBuild Projects="HostSample\WasmSample.XE7.dproj"/>
     </Target>
     <Target Name="WasmSample_XE7:Clean">
-        <MSBuild Projects="HostSample\WasmSample.XE7.dproj" Targets="Clean"/>
+        <MSBuild Projects="WasmSample\WasmSample.XE7.dproj" Targets="Clean"/>
     </Target>
     <Target Name="WasmSample_XE7:Make">
-        <MSBuild Projects="HostSample\WasmSample.XE7.dproj" Targets="Make"/>
+        <MSBuild Projects="WasmSample\WasmSample.XE7.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="NodeSample_XE7">
+        <MSBuild Projects="WasmSample\NodeSample.XE7.dproj"/>
+    </Target>
+    <Target Name="NodeSample_XE7:Clean">
+        <MSBuild Projects="NodeSample\NodeSample.XE7.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="NodeSample_XE7:Make">
+        <MSBuild Projects="NodeSample\NodeSample.XE7.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="ChakraCoreTests_XE7;ChakraCoreTestsUI_XE7;SimpleHost_XE7;ChakraCoreHostSample_XE7;WasmSample_XE7"/>
+        <CallTarget Targets="ChakraCoreTests_XE7;ChakraCoreTestsUI_XE7;SimpleHost_XE7;ChakraCoreHostSample_XE7;WasmSample_XE7;NodeSample_XE7"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="ChakraCoreTests_XE7:Clean;ChakraCoreTestsUI_XE7:Clean;SimpleHost_XE7:Clean;ChakraCoreHostSample_XE7:Clean;WasmSample_XE7:Clean"/>
+        <CallTarget Targets="ChakraCoreTests_XE7:Clean;ChakraCoreTestsUI_XE7:Clean;SimpleHost_XE7:Clean;ChakraCoreHostSample_XE7:Clean;WasmSample_XE7:Clean;NodeSample_XE7:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="ChakraCoreTests_XE7:Make;ChakraCoreTestsUI_XE7:Make;SimpleHost_XE7:Make;ChakraCoreHostSample_XE7:Make;WasmSample_XE7:Make"/>
+        <CallTarget Targets="ChakraCoreTests_XE7:Make;ChakraCoreTestsUI_XE7:Make;SimpleHost_XE7:Make;ChakraCoreHostSample_XE7:Make;WasmSample_XE7:Make;NodeSample_XE7:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

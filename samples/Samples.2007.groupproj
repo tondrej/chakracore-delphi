@@ -9,6 +9,7 @@
     <Projects Include="HostSample\ChakraCoreHostSample.2007.dproj" />
     <Projects Include="SimpleHostSample\SimpleHost.2007.dproj" />
     <Projects Include="WasmSample\WasmSample.2007.dproj" />
+    <Projects Include="NodeSample\NodeSample.2007.dproj" />
   </ItemGroup>
   <ProjectExtensions>
     <Borland.Personality>Default.Personality</Borland.Personality>
@@ -53,22 +54,31 @@
     <MSBuild Projects="HostSample\ChakraCoreHostSample.2007.dproj" Targets="Make" />
   </Target>
   <Target Name="WasmSample_2007">
-    <MSBuild Projects="HostSample\WasmSample.2007.dproj" Targets="" />
+    <MSBuild Projects="WasmSample\WasmSample.2007.dproj" Targets="" />
   </Target>
   <Target Name="WasmSample_2007:Clean">
-    <MSBuild Projects="HostSample\WasmSample.2007.dproj" Targets="Clean" />
+    <MSBuild Projects="WasmSample\WasmSample.2007.dproj" Targets="Clean" />
   </Target>
   <Target Name="WasmSample_2007:Make">
-    <MSBuild Projects="HostSample\WasmSample.2007.dproj" Targets="Make" />
+    <MSBuild Projects="WasmSample\WasmSample.2007.dproj" Targets="Make" />
+  </Target>
+  <Target Name="NodeSample_2007">
+    <MSBuild Projects="NodeSample\NodeSample.2007.dproj" Targets="" />
+  </Target>
+  <Target Name="NodeSample_2007:Clean">
+    <MSBuild Projects="NodeSample\NodeSample.2007.dproj" Targets="Clean" />
+  </Target>
+  <Target Name="NodeSample_2007:Make">
+    <MSBuild Projects="NodeSample\NodeSample.2007.dproj" Targets="Make" />
   </Target>
   <Target Name="Build">
-    <CallTarget Targets="ChakraCoreTests_2007;ChakraCoreTestsUI_2007;SimpleHost_2007;ChakraCoreHostSample_2007;WasmSample_2007" />
+    <CallTarget Targets="ChakraCoreTests_2007;ChakraCoreTestsUI_2007;SimpleHost_2007;ChakraCoreHostSample_2007;WasmSample_2007;NodeSample_2007" />
   </Target>
   <Target Name="Clean">
-    <CallTarget Targets="ChakraCoreTests_2007:Clean;ChakraCoreTestsUI_2007:Clean;SimpleHost_2007:Clean;ChakraCoreHostSample_2007:Clean;WasmSample_2007:Clean" />
+    <CallTarget Targets="ChakraCoreTests_2007:Clean;ChakraCoreTestsUI_2007:Clean;SimpleHost_2007:Clean;ChakraCoreHostSample_2007:Clean;WasmSample_2007:Clean;NodeSample_2007:Clean" />
   </Target>
   <Target Name="Make">
-    <CallTarget Targets="ChakraCoreTests_2007:Make;ChakraCoreTestsUI_2007:Make;SimpleHost_2007:Make;ChakraCoreHostSample_2007:Make;WasmSample_2007:Make" />
+    <CallTarget Targets="ChakraCoreTests_2007:Make;ChakraCoreTestsUI_2007:Make;SimpleHost_2007:Make;ChakraCoreHostSample_2007:Make;WasmSample_2007:Make;NodeSample_2007:Make" />
   </Target>
   <Import Condition="Exists('$(MSBuildBinPath)\Borland.Group.Targets')" Project="$(MSBuildBinPath)\Borland.Group.Targets" />
 </Project>

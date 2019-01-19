@@ -18,6 +18,9 @@
         <Projects Include="WasmSample\WasmSample.Tokyo.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="NodeSample\NodeSample.Tokyo.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -63,22 +66,31 @@
         <MSBuild Projects="HostSample\ChakraCoreHostSample.Tokyo.dproj" Targets="Make"/>
     </Target>
     <Target Name="WasmSample_Tokyo">
-        <MSBuild Projects="HostSample\WasmSample.Tokyo.dproj"/>
+        <MSBuild Projects="WasmSample\WasmSample.Tokyo.dproj"/>
     </Target>
     <Target Name="WasmSample_Tokyo:Clean">
-        <MSBuild Projects="HostSample\WasmSample.Tokyo.dproj" Targets="Clean"/>
+        <MSBuild Projects="WasmSample\WasmSample.Tokyo.dproj" Targets="Clean"/>
     </Target>
     <Target Name="WasmSample_Tokyo:Make">
-        <MSBuild Projects="HostSample\WasmSample.Tokyo.dproj" Targets="Make"/>
+        <MSBuild Projects="WasmSample\WasmSample.Tokyo.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="NodeSample_Tokyo">
+        <MSBuild Projects="NodeSample\NodeSample.Tokyo.dproj"/>
+    </Target>
+    <Target Name="NodeSample_Tokyo:Clean">
+        <MSBuild Projects="NodeSample\NodeSample.Tokyo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="NodeSample_Tokyo:Make">
+        <MSBuild Projects="NodeSample\NodeSample.Tokyo.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="ChakraCoreTests_Tokyo;ChakraCoreTestsUI_Tokyo;SimpleHost_Tokyo;ChakraCoreHostSample_Tokyo;WasmSample_Tokyo"/>
+        <CallTarget Targets="ChakraCoreTests_Tokyo;ChakraCoreTestsUI_Tokyo;SimpleHost_Tokyo;ChakraCoreHostSample_Tokyo;WasmSample_Tokyo;NodeSample_Tokyo"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="ChakraCoreTests_Tokyo:Clean;ChakraCoreTestsUI_Tokyo:Clean;SimpleHost_Tokyo:Clean;ChakraCoreHostSample_Tokyo:Clean;WasmSample_Tokyo:Clean"/>
+        <CallTarget Targets="ChakraCoreTests_Tokyo:Clean;ChakraCoreTestsUI_Tokyo:Clean;SimpleHost_Tokyo:Clean;ChakraCoreHostSample_Tokyo:Clean;WasmSample_Tokyo:Clean;NodeSample_Tokyo:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="ChakraCoreTests_Tokyo:Make;ChakraCoreTestsUI_Tokyo:Make;SimpleHost_Tokyo:Make;ChakraCoreHostSample_Tokyo:Make;WasmSample_Tokyo:Make"/>
+        <CallTarget Targets="ChakraCoreTests_Tokyo:Make;ChakraCoreTestsUI_Tokyo:Make;SimpleHost_Tokyo:Make;ChakraCoreHostSample_Tokyo:Make;WasmSample_Tokyo:Make;NodeSample_Tokyo:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

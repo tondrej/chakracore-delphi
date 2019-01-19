@@ -18,6 +18,9 @@
 			<Projects Include="WasmSample\WasmSample.2009.dproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="NodeSample\NodeSample.2009.dproj">
+				<Dependencies/>
+			</Projects>
 		</ItemGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -63,22 +66,31 @@
 			<MSBuild Targets="Make" Projects="HostSample\ChakraCoreHostSample.2009.dproj"/>
 		</Target>
 		<Target Name="WasmSample_2009">
-			<MSBuild Projects="HostSample\WasmSample.2009.dproj"/>
+			<MSBuild Projects="WasmSample\WasmSample.2009.dproj"/>
 		</Target>
 		<Target Name="WasmSample_2009:Clean">
-			<MSBuild Targets="Clean" Projects="HostSample\WasmSample.2009.dproj"/>
+			<MSBuild Targets="Clean" Projects="WasmSample\WasmSample.2009.dproj"/>
 		</Target>
 		<Target Name="WasmSample_2009:Make">
-			<MSBuild Targets="Make" Projects="HostSample\WasmSample.2009.dproj"/>
+			<MSBuild Targets="Make" Projects="WasmSample\WasmSample.2009.dproj"/>
+		</Target>
+		<Target Name="NodeSample_2009">
+			<MSBuild Projects="NodeSample\NodeSample.2009.dproj"/>
+		</Target>
+		<Target Name="NodeSample_2009:Clean">
+			<MSBuild Targets="Clean" Projects="NodeSample\NodeSample.2009.dproj"/>
+		</Target>
+		<Target Name="NodeSample_2009:Make">
+			<MSBuild Targets="Make" Projects="NodeSample\NodeSample.2009.dproj"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="ChakraCoreTests_2009;ChakraCoreTestsUI_2009;SimpleHost_2009;ChakraCoreHostSample_2009;WasmSample_2009"/>
+			<CallTarget Targets="ChakraCoreTests_2009;ChakraCoreTestsUI_2009;SimpleHost_2009;ChakraCoreHostSample_2009;WasmSample_2009;NodeSample_2009"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="ChakraCoreTests_2009:Clean;ChakraCoreTestsUI_2009:Clean;SimpleHost_2009:Clean;ChakraCoreHostSample_2009:Clean;WasmSample_2009:Clean"/>
+			<CallTarget Targets="ChakraCoreTests_2009:Clean;ChakraCoreTestsUI_2009:Clean;SimpleHost_2009:Clean;ChakraCoreHostSample_2009:Clean;WasmSample_2009:Clean;NodeSample_2009:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="ChakraCoreTests_2009:Make;ChakraCoreTestsUI_2009:Make;SimpleHost_2009:Make;ChakraCoreHostSample_2009:Make;WasmSample_2009:Make"/>
+			<CallTarget Targets="ChakraCoreTests_2009:Make;ChakraCoreTestsUI_2009:Make;SimpleHost_2009:Make;ChakraCoreHostSample_2009:Make;WasmSample_2009:Make;NodeSample_2009:Make"/>
 		</Target>
 		<Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 	</Project>

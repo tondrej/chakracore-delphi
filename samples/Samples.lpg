@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectGroup FileVersion="1">
-    <Targets Count="5">
+    <Targets Count="6">
       <Target0 FileName="..\tests\ChakraCoreTests.lpi">
         <BuildModes Count="2"/>
         <Mode1 Name="Debug" Compile="True"/>
@@ -27,6 +27,11 @@
         <Mode1 Name="Debug" Compile="True"/>
         <Mode2 Name="Release"/>
       </Target4>
+      <Target5 FileName="NodeSample\NodeSample.lpi">
+        <BuildModes Count="2"/>
+        <Mode1 Name="Debug" Compile="True"/>
+        <Mode2 Name="Release"/>
+      </Target5>
     </Targets>
   </ProjectGroup>
 </CONFIG>

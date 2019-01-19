@@ -9,7 +9,8 @@ MAKE = $(ROOT)\bin\make.exe -$(MAKEFLAGS) -f$**
 DCC = $(ROOT)\bin\dcc32.exe $**
 BRCC = $(ROOT)\bin\brcc32.exe $**
 #------------------------------------------------------------------------------
-PROJECTS = ChakraCoreTests.exe ChakraCoreTestsUI.exe SimpleHost.exe ChakraCoreHostSample.exe WasmSample.exe
+PROJECTS = ChakraCoreTests.exe ChakraCoreTestsUI.exe SimpleHost.exe ChakraCoreHostSample.exe \
+  WasmSample.exe NodeSample.exe
 #------------------------------------------------------------------------------
 default: $(PROJECTS)
 #------------------------------------------------------------------------------
@@ -29,4 +30,6 @@ SimpleHost.exe: SimpleHostSample\SimpleHost.dpr
 WasmSample.exe: WasmSample\WasmSample.dpr
   $(DCC)
 
+NodeSample.exe: NodeSample\NodeSample.dpr
+  $(DCC)
 

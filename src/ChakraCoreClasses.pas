@@ -213,7 +213,6 @@ type
     FHandle: JsContextRef;
     FMessageQueue: TQueue;
     FModules: TStringList;
-    FName: UnicodeString;
     FRuntime: TChakraCoreRuntime;
     FSourceContext: NativeUInt;
 
@@ -275,7 +274,6 @@ type
     property ModuleCount: Integer read GetModuleCount;
     property ModuleNames[Index: Integer]: UnicodeString read GetModuleNames;
     property Modules[Index: Integer]: TChakraModule read GetModules;
-    property Name: UnicodeString read FName;
     property Runtime: TChakraCoreRuntime read FRuntime;
 
     property OnActivate: TNotifyEvent read FOnActivate write FOnActivate;
@@ -1414,15 +1412,9 @@ begin
   if ModuleCount = 0 then
     AddModule('');
 
-  FName := UTF8ToString(AName);
+  Result := JsRunScript(Script, AName, FSourceContext, IsLibraryCode);
   Inc(FSourceContext);
-  try
-    Result := JsRunScript(Script, AName, FSourceContext, IsLibraryCode);
-
-    ProcessMessages;
-  finally
-    FName := '';
-  end;
+  ProcessMessages;
 end;
 
 function TChakraCoreContext.RunScript(const Script, AName: UnicodeString; IsLibraryCode: Boolean): JsValueRef;
@@ -1430,16 +1422,9 @@ begin
   if ModuleCount = 0 then
     AddModule('');
 
-  FName := AName;
+  Result := JsRunScript(Script, AName, FSourceContext, IsLibraryCode);
   Inc(FSourceContext);
-  try
-    Result := JsRunScript(Script, AName, FSourceContext, IsLibraryCode);
-
-    ProcessMessages;
-  finally
-    FName := '';
-    Dec(FSourceContext);
-  end;
+  ProcessMessages;
 end;
 
 { TChakraCoreNativeArrayBuffer public }

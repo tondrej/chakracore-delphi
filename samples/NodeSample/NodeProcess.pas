@@ -96,7 +96,7 @@ const
 {$ifdef MSWINDOWS}
   sPlatform = 'win32';
 {$endif}
-{$ifdef OSX}
+{$ifdef DARWIN}
   sPlatform = 'darwin';
 {$endif}
 {$ifdef LINUX}

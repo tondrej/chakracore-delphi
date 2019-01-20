@@ -75,7 +75,7 @@
         <MSBuild Projects="WasmSample\WasmSample.XE7.dproj" Targets="Make"/>
     </Target>
     <Target Name="NodeSample_XE7">
-        <MSBuild Projects="WasmSample\NodeSample.XE7.dproj"/>
+        <MSBuild Projects="NodeSample\NodeSample.XE7.dproj"/>
     </Target>
     <Target Name="NodeSample_XE7:Clean">
         <MSBuild Projects="NodeSample\NodeSample.XE7.dproj" Targets="Clean"/>

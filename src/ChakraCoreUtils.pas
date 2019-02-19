@@ -908,18 +908,8 @@ begin
 end;
 
 function JsGetProperty(Value, Prop: JsValueRef): JsValueRef;
-var
-  PropId: JsPropertyIdRef;
 begin
-  case JsGetValueType(Prop) of
-    JsSymbol:
-      begin
-        ChakraCoreCheck(JsGetPropertyIdFromSymbol(Prop, PropId));
-        Result := JsGetProperty(Value, PropId)
-      end;
-    else
-      Result := JsGetProperty(Value, JsStringToUTF8String(Prop));
-  end;
+  ChakraCoreCheck(JsObjectGetProperty(Value, Prop, Result));
 end;
 
 function JsGetProperty(Value: JsValueRef; PropId: JsPropertyIdRef): JsValueRef;
@@ -928,47 +918,28 @@ begin
 end;
 
 function JsGetProperty(Value: JsValueRef; const PropName: UTF8String): JsValueRef;
-var
-  PropId: JsPropertyIdRef;
 begin
-  ChakraCoreCheck(JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId));
-  Result := JsGetProperty(Value, PropId);
+  ChakraCoreCheck(JsObjectGetProperty(Value, StringToJsString(PropName), Result));
 end;
 
 function JsGetProperty(Value: JsValueRef; const PropName: UnicodeString): JsValueRef;
 begin
-  Result := JsGetProperty(Value, UTF8Encode(PropName));
+  ChakraCoreCheck(JsObjectGetProperty(Value, StringToJsString(PropName), Result));
 end;
 
 function JsTryGetProperty(Value, Prop: JsValueRef; out PropValue: JsValueRef): Boolean;
-var
-  PropName: UTF8String;
-  PropId: JsPropertyIdRef;
 begin
-  case JsGetValueType(Prop) of
-    JsSymbol:
-      Result := (JsGetPropertyIdFromSymbol(Prop, PropId) = JsNoError) and
-        (ChakraCommon.JsGetProperty(Value, PropId, PropValue) = JsNoError);
-    else
-    begin
-      PropName := JsStringToUTF8String(Prop);
-      Result := (JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId) = JsNoError) and
-        (ChakraCommon.JsGetProperty(Value, PropId, PropValue) = JsNoError);
-    end;
-  end;
+  Result := JsObjectGetProperty(Value, Prop, PropValue) = JsNoError;
 end;
 
 function JsTryGetProperty(Value: JsValueRef; const PropName: UTF8String; out PropValue: JsValueRef): Boolean;
-var
-  PropId: JsPropertyIdRef;
 begin
-  Result := (JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId) = JsNoError) and
-    (ChakraCommon.JsGetProperty(Value, PropId, PropValue) = JsNoError);
+  Result := JsObjectGetProperty(Value, StringToJsString(PropName), PropValue) = JsNoError;
 end;
 
 function JsTryGetProperty(Value: JsValueRef; const PropName: UnicodeString; out PropValue: JsValueRef): Boolean;
 begin
-  Result := JsTryGetProperty(Value, UTF8Encode(PropName), PropValue);
+  Result := JsObjectGetProperty(Value, StringToJsString(PropName), PropValue) = JsNoError;
 end;
 
 function JsHasException: Boolean;
@@ -989,17 +960,10 @@ end;
 
 function JsHasProperty(Value, Prop: JsValueRef): Boolean;
 var
-  PropId: JsPropertyIdRef;
+  B: ByteBool;
 begin
-  case JsGetValueType(Prop) of
-    JsSymbol:
-      begin
-        ChakraCoreCheck(JsGetPropertyIdFromSymbol(Prop, PropId));
-        Result := JsHasProperty(Value, PropId);
-      end;
-    else
-      Result := JsHasProperty(Value, JsStringToUnicodeString(Prop));
-  end;
+  ChakraCoreCheck(JsObjectHasProperty(Value, Prop, B));
+  Result := B;
 end;
 
 function JsHasProperty(Value: JsValueRef; const PropId: JsPropertyIdRef): Boolean;
@@ -1012,15 +976,18 @@ end;
 
 function JsHasProperty(Value: JsValueRef; const PropName: UTF8String): Boolean;
 var
-  PropId: JsPropertyIdRef;
+  B: ByteBool;
 begin
-  ChakraCoreCheck(JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId));
-  Result := JsHasProperty(Value, PropId);
+  ChakraCoreCheck(JsObjectHasProperty(Value, StringToJsString(PropName), B));
+  Result := B;
 end;
 
 function JsHasProperty(Value: JsValueRef; const PropName: UnicodeString): Boolean;
+var
+  B: ByteBool;
 begin
-  Result := JsHasProperty(Value, UTF8Encode(PropName));
+  ChakraCoreCheck(JsObjectHasProperty(Value, StringToJsString(PropName), B));
+  Result := B;
 end;
 
 function JsCreatePropertyDescriptor(Configurable, Enumerable: Boolean; GetAccessor, SetAccessor: JsValueRef;
@@ -1143,18 +1110,8 @@ begin
 end;
 
 procedure JsSetProperty(Instance, Prop, Value: JsValueRef; UseStrictRules: Boolean);
-var
-  PropId: JsPropertyIdRef;
 begin
-  case JsGetValueType(Prop) of
-    JsSymbol:
-      begin
-        ChakraCoreCheck(JsGetPropertyIdFromSymbol(Prop, PropId));
-        JsSetProperty(Instance, PropId, Value, UseStrictRules);
-      end;
-    else
-      JsSetProperty(Instance, JsStringToUnicodeString(Prop), Value, UseStrictRules);
-  end;
+  ChakraCoreCheck(JsObjectSetProperty(Instance, Prop, Value, UseStrictRules));
 end;
 
 procedure JsSetProperty(Instance: JsValueRef; PropId: JsPropertyIdRef; Value: JsValueRef; UseStrictRules: Boolean);
@@ -1163,17 +1120,14 @@ begin
 end;
 
 procedure JsSetProperty(Instance: JsValueRef; const PropName: UTF8String; Value: JsValueRef; UseStrictRules: Boolean);
-var
-  PropId: JsPropertyIdRef;
 begin
-  ChakraCoreCheck(JsCreatePropertyId(PAnsiChar(PropName), Length(PropName), PropId));
-  JsSetProperty(Instance, PropId, Value, UseStrictRules);
+  ChakraCoreCheck(JsObjectSetProperty(Instance, StringToJsString(PropName), Value, UseStrictRules));
 end;
 
 procedure JsSetProperty(Instance: JsValueRef; const PropName: UnicodeString; Value: JsValueRef;
   UseStrictRules: Boolean);
 begin
-  JsSetProperty(Instance, UTF8Encode(PropName), Value, UseStrictRules);
+  ChakraCoreCheck(JsObjectSetProperty(Instance, StringToJsString(PropName), Value, UseStrictRules));
 end;
 
 const

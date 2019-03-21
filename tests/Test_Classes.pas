@@ -69,6 +69,7 @@ type
     procedure TestInheritance2;
     procedure TestFinalizer;
     procedure TestFinalizer2;
+    procedure TestFinalizer3;
   end;
 
 implementation
@@ -86,7 +87,7 @@ begin
   Runtime := nil;
   Context := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     try
@@ -122,7 +123,7 @@ begin
   Runtime := nil;
   Context := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     try
@@ -155,7 +156,7 @@ begin
   Runtime := nil;
   Context := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     try
@@ -188,7 +189,7 @@ begin
   Runtime := nil;
   Context := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     try
@@ -272,7 +273,7 @@ begin
   Context := nil;
   TestObject := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     TestObject := TTestObject1.Create;
@@ -299,7 +300,7 @@ begin
   Context := nil;
   TestObject := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     TestObject := TTestObject1.Create;
@@ -327,7 +328,7 @@ begin
   Context := nil;
   TestObject := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     TestObject := TTestObject1.Create;
@@ -352,7 +353,7 @@ begin
   Runtime := nil;
   Context := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     TTestObject1.Project('TestObject');
@@ -382,7 +383,7 @@ begin
   Context1 := nil;
   Context2 := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context1 := TChakraCoreContext.Create(Runtime);
     Context2 := TChakraCoreContext.Create(Runtime);
 
@@ -491,7 +492,7 @@ begin
   Runtime := nil;
   Context := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     TRectangle.Project('Rectangle');
@@ -623,7 +624,7 @@ begin
   Runtime := nil;
   Context := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     TRectangle.Project('Rectangle');
@@ -725,11 +726,25 @@ begin
   inherited Destroy;
 end;
 
+function Get_Alive(Callee: JsValueRef; IsConstructCall: bool; Args: PJsValueRef; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+begin
+  Result := BooleanToJsBoolean(DestroyedCount = 0);
+end;
+
+// see that the finalizer gets called for a native instance if/when GC runs
 procedure TNativeClassTestCase.TestFinalizer;
 const
   SScript =
+    // create native instance from script
     'var obj = new TestObject2();'                               + sLineBreak +
-    'obj = null;';
+    // release reference
+    'obj = null;'                                                + sLineBreak +
+    // wait for GC
+    'while (alive) {'                                            + sLineBreak +
+      // do some allocation to trigger GC eventually
+    '  var obj = new Object();'                                  + sLineBreak +
+    '}';
   SName = 'TestFinalizer.js';
 var
   Runtime: TChakraCoreRuntime;
@@ -738,7 +753,39 @@ begin
   Runtime := nil;
   Context := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([]);
+    Runtime := TChakraCoreRuntime.Create;
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    TTestObject2.Project;
+    JsDefineProperty('alive', False, False, JsCreateFunction(@Get_Alive, nil, UnicodeString('')), nil);
+
+    CreatedCount := 0;
+    DestroyedCount := 0;
+    JsRunScript(SScript, SName);
+
+    CheckEquals(1, CreatedCount, 'constructor calls');
+    CheckEquals(1, DestroyedCount, 'destructor calls');
+  finally
+    Context.Free;
+    Runtime.Free;
+  end;
+end;
+
+// see that the finalizer gets called for a native instance if/when GC runs, or when the runtime is disposed
+procedure TNativeClassTestCase.TestFinalizer2;
+const
+  SScript =
+    'var obj = new TestObject2();'                               + sLineBreak +
+    'obj = null;';
+  SName = 'TestFinalizer2.js';
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create;
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     TTestObject2.Project;
@@ -755,21 +802,21 @@ begin
   end;
 end;
 
-procedure TNativeClassTestCase.TestFinalizer2;
+// see that the finalizer gets called for a native instance if/when GC runs (invoked by host)
+procedure TNativeClassTestCase.TestFinalizer3;
 const
   SScript =
     'var obj = new TestObject2();'                               + sLineBreak +
     'obj = null;';
-  SName = 'TestFinalizer2.js';
+  SName = 'TestFinalizer3.js';
 var
   Runtime: TChakraCoreRuntime;
   Context: TChakraCoreContext;
-  Ticks: Cardinal;
 begin
   Runtime := nil;
   Context := nil;
   try
-    Runtime := TChakraCoreRuntime.Create([ccroDisableBackgroundWork]);
+    Runtime := TChakraCoreRuntime.Create([ccroDisableBackgroundWork]); // doesn't seem to work with background GC
     Context := TChakraCoreContext.Create(Runtime);
     Context.Activate;
     TTestObject2.Project;
@@ -777,7 +824,6 @@ begin
     CreatedCount := 0;
     DestroyedCount := 0;
     JsRunScript(SScript, SName);
-
     Runtime.CollectGarbage;
 
     CheckEquals(1, CreatedCount, 'constructor calls');

@@ -67,6 +67,8 @@ type
     procedure TestClassProjectedInMultipleContexts;
     procedure TestInheritance;
     procedure TestInheritance2;
+    procedure TestFinalizer;
+    procedure TestFinalizer2;
   end;
 
 implementation
@@ -222,7 +224,6 @@ type
   protected
     class procedure RegisterProperties(AInstance: JsHandle); override;
     class procedure RegisterMethods(AInstance: JsHandle); override;
-  public
   end;
 
 function TTestObject1.GetProp1: JsValueRef;
@@ -695,6 +696,92 @@ begin
     CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'y')), 'squareObj.y after move');
     CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'w')), 'squareObj.w after move');
     CheckEquals(20, JsNumberToInt(JsGetProperty(SquareObj, 'h')), 'squareObj.h after move');
+  finally
+    Context.Free;
+    Runtime.Free;
+  end;
+end;
+
+var
+  CreatedCount: Integer = 0;
+  DestroyedCount: Integer = 0;
+
+type
+  TTestObject2 = class(TNativeObject)
+  public
+    constructor Create(Args: PJsValueRef = nil; ArgCount: Word = 0; AFinalize: Boolean = False); override;
+    destructor Destroy; override;
+  end;
+
+constructor TTestObject2.Create(Args: PJsValueRef; ArgCount: Word; AFinalize: Boolean);
+begin
+  inherited Create(Args, ArgCount, AFinalize);
+  Inc(CreatedCount);
+end;
+
+destructor TTestObject2.Destroy;
+begin
+  Inc(DestroyedCount);
+  inherited Destroy;
+end;
+
+procedure TNativeClassTestCase.TestFinalizer;
+const
+  SScript =
+    'var obj = new TestObject2();'                               + sLineBreak +
+    'obj = null;';
+  SName = 'TestFinalizer.js';
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([]);
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    TTestObject2.Project;
+
+    CreatedCount := 0;
+    DestroyedCount := 0;
+    JsRunScript(SScript, SName);
+  finally
+    Context.Free;
+    Runtime.Free;
+
+    CheckEquals(1, CreatedCount, 'constructor calls');
+    CheckEquals(1, DestroyedCount, 'destructor calls');
+  end;
+end;
+
+procedure TNativeClassTestCase.TestFinalizer2;
+const
+  SScript =
+    'var obj = new TestObject2();'                               + sLineBreak +
+    'obj = null;';
+  SName = 'TestFinalizer2.js';
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+  Ticks: Cardinal;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create([ccroDisableBackgroundWork]);
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    TTestObject2.Project;
+
+    CreatedCount := 0;
+    DestroyedCount := 0;
+    JsRunScript(SScript, SName);
+
+    Runtime.CollectGarbage;
+
+    CheckEquals(1, CreatedCount, 'constructor calls');
+    CheckEquals(1, DestroyedCount, 'destructor calls');
   finally
     Context.Free;
     Runtime.Free;

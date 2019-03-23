@@ -70,6 +70,7 @@ type
     procedure TestFinalizer;
     procedure TestFinalizer2;
     procedure TestFinalizer3;
+    procedure TestFinalizer4;
   end;
 
 implementation
@@ -831,6 +832,44 @@ begin
   finally
     Context.Free;
     Runtime.Free;
+  end;
+end;
+
+const
+  FinalizerLoopCount = 10000;
+
+// see that repeated construction of a projected class no longer causes access violation
+// (constructors addrefed to prevent premature GC)
+procedure TNativeClassTestCase.TestFinalizer4;
+const
+  SScript =
+    'var obj = new TestObject2();'                               + sLineBreak +
+    'obj = null;'                                                + sLineBreak +
+    '';
+  SName = 'TestFinalizer4.js';
+var
+  Runtime: TChakraCoreRuntime;
+  Context: TChakraCoreContext;
+  I: Integer;
+begin
+  Runtime := nil;
+  Context := nil;
+  try
+    Runtime := TChakraCoreRuntime.Create;
+    Context := TChakraCoreContext.Create(Runtime);
+    Context.Activate;
+    TTestObject2.Project;
+
+    CreatedCount := 0;
+    DestroyedCount := 0;
+    for I := 0 to FinalizerLoopCount - 1 do
+      Context.RunScript(SScript, SName);
+  finally
+    Context.Free;
+    Runtime.Free;
+
+    CheckNotEquals(0, CreatedCount, 'constructor calls');
+    CheckEquals(CreatedCount, DestroyedCount, 'destructor calls');
   end;
 end;
 

@@ -449,6 +449,7 @@ begin
     begin
       AConstructor := JsCreateFunction(Native_ConstructorCallback, CallbackState,
         JsStringToUnicodeString(JsGetProperty(Callee, 'name')));
+      ChakraCoreCheck(JsAddRef(AConstructor, nil));
       APrototype := NativeClass.InitializePrototype(AConstructor);
       NativeClass.RegisterMethods(APrototype);
       NativeClass.RegisterProperties(APrototype);
@@ -1300,7 +1301,10 @@ var
   I: Integer;
 begin
   for I := FClassInfos.Count - 1 downto 0 do
+  begin
+    ChakraCoreCheck(JsRelease(PNativeClassInfo(FClassInfos[I])^.AConstructor, nil));
     FreeMem(FClassInfos[I]);
+  end;
   FreeAndNil(FClassInfos);
   FGlobal := JS_INVALID_REFERENCE;
   FHandle := JS_INVALID_REFERENCE;

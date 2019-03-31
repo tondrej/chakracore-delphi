@@ -187,6 +187,7 @@ begin
       Result := JsRunScript(UTF8String(SScript), UTF8String(SName));
 
     CheckValueType(JsUndefined, Result, 'result type');
+    Check(JsEqual(JsUndefinedValue, Result, True), 'result type');
   end;
 end;
 
@@ -206,6 +207,7 @@ begin
       Result := JsRunScript(UTF8String(SScript), UTF8String(SName));
 
     CheckValueType(JsNull, Result, 'result type');
+    Check(JsEqual(JsNullValue, Result, True), 'result type');
   end;
 end;
 
@@ -227,6 +229,7 @@ begin
 
     CheckValueType(JsNumber, Result, 'result type');
     CheckEquals(IntValue, JsNumberToInt(Result), 'result value');
+    Check(JsEqual(IntToJsNumber(IntValue), Result, True), 'result value');
   end;
 end;
 
@@ -248,6 +251,7 @@ begin
 
     CheckValueType(JsNumber, Result, 'result type');
     CheckEquals(DoubleValue, JsNumberToDouble(Result), 'result value');
+    Check(JsEqual(DoubleToJsNumber(DoubleValue), Result, True), 'result value');
   end;
 end;
 
@@ -293,48 +297,54 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestString;
 const
-  StringValue: UnicodeString = 'Hello, world!';
+  StringValues: array[0..1] of UnicodeString = ('', 'Hello, world!');
   SScript = 'this.result = "%s"';
   SName = 'TestString.js';
 var
   Unicode: Boolean;
+  I: Integer;
   Result: JsValueRef;
 begin
   for Unicode := False to True do
-  begin
-    if Unicode then
-      Result := JsRunScript(UnicodeString(Format(SScript, [StringValue])), UnicodeString(SName))
-    else
-      Result := JsRunScript(UTF8String(Format(SScript, [StringValue])), UTF8String(SName));
+    for I := Low(StringValues) to High(StringValues) do
+    begin
+      if Unicode then
+        Result := JsRunScript(UnicodeString(Format(SScript, [StringValues[I]])), UnicodeString(SName))
+      else
+        Result := JsRunScript(UTF8String(Format(SScript, [StringValues[I]])), UTF8String(SName));
 
-    CheckValueType(JsString, Result, 'result type');
-    CheckEquals(StringValue, JsStringToUnicodeString(Result), 'result value');
-  end;
+      CheckValueType(JsString, Result, 'result type');
+      CheckEquals(StringValues[I], JsStringToUnicodeString(Result), 'result value');
+      Check(JsEqual(StringToJsString(StringValues[I]), Result, True), 'result value');
+    end;
 end;
 
 procedure TChakraCoreUtilsScripting.TestStringUnicode;
 const
-  StringValue: array [0..6] of AnsiChar = (#$E4, #$BD, #$A0, #$E5, #$A5, #$BD, #$00);
+  StringValues: array [0..1] of UTF8String = ('', #$E4#$BD#$A0#$E5#$A5#$BD);
   SScript = 'this.result = "%s"';
   SName = 'TestString.js';
 var
   Unicode: Boolean;
+  I: Integer;
   Result: JsValueRef;
 begin
   for Unicode := False to True do
-  begin
-    if Unicode then
-      Result := JsRunScript(WideFormat(SScript, [UTF8ToString(StringValue)]), UnicodeString(SName))
-    else
-      Result := JsRunScript(Format(SScript, [UTF8String(StringValue)]), UTF8String(SName));
+    for I := Low(StringValues) to High(StringValues) do
+    begin
+      if Unicode then
+        Result := JsRunScript(WideFormat(SScript, [UTF8ToString(StringValues[I])]), UnicodeString(SName))
+      else
+        Result := JsRunScript(Format(SScript, [UTF8String(StringValues[I])]), UTF8String(SName));
 
-    CheckValueType(JsString, Result, 'result type');
+      CheckValueType(JsString, Result, 'result type');
 {$ifdef SUPPORTS_UNICODE}
-    CheckEquals(UTF8ToString(StringValue), JsStringToUnicodeString(Result), 'result value');
+      CheckEquals(UTF8ToString(StringValues[I]), JsStringToUnicodeString(Result), 'result value');
 {$else}
-    CheckEquals(UTF8String(StringValue), JsStringToUTF8String(Result), 'result value');
+      CheckEquals(UTF8String(StringValues[I]), JsStringToUTF8String(Result), 'result value');
 {$endif}
-  end;
+      Check(JsEqual(StringToJsString(StringValues[I]), Result, True), 'result value');
+    end;
 end;
 
 procedure TChakraCoreUtilsScripting.TestBoolean;
@@ -359,6 +369,7 @@ begin
 
       CheckValueType(JsBoolean, Result, 'result type');
       CheckEquals(BooleanValue, JsBooleanToBoolean(Result), 'result value');
+      Check(JsEqual(BooleanToJsBoolean(BooleanValue), Result, True), 'result value');
     end;
   end;
 end;
@@ -451,22 +462,27 @@ begin
     ChakraCoreCheck(JsGetIndexedProperty(Result, IntToJsNumber(2), Element));
     CheckValueType(JsNumber, Element, 'element 2 type');
     CheckEquals(IntElementValue, JsNumberToInt(Element), 'element 2 value');
+    Check(JsEqual(IntToJsNumber(IntElementValue), Element, True), 'element 2 value');
 
     ChakraCoreCheck(JsGetIndexedProperty(Result, IntToJsNumber(3), Element));
     CheckValueType(JsNumber, Element, 'element 3 type');
     CheckEquals(DoubleElementValue, JsNumberToDouble(Element), 'element 3 value');
+    Check(JsEqual(DoubleToJsNumber(DoubleElementValue), Element, True), 'element 3 value');
 
     ChakraCoreCheck(JsGetIndexedProperty(Result, IntToJsNumber(4), Element));
     CheckValueType(JsString, Element, 'element 4 type');
     CheckEquals(StringElementValue, JsStringToUnicodeString(Element), 'element 4 value');
+    Check(JsEqual(StringToJsString(StringElementValue), Element, True), 'element 4 value');
 
     ChakraCoreCheck(JsGetIndexedProperty(Result, IntToJsNumber(5), Element));
     CheckValueType(JsBoolean, Element, 'element 5 type');
     CheckEquals(True, JsBooleanToBoolean(Element), 'element 5 value');
+    Check(JsEqual(BooleanToJsBoolean(True), Element, True), 'element 5 value');
 
     ChakraCoreCheck(JsGetIndexedProperty(Result, IntToJsNumber(6), Element));
     CheckValueType(JsBoolean, Element, 'element 6 type');
     CheckEquals(False, JsBooleanToBoolean(Element), 'element 6 value');
+    Check(JsEqual(BooleanToJsBoolean(False), Element, True), 'element 6 value');
 
     ChakraCoreCheck(JsGetIndexedProperty(Result, IntToJsNumber(7), Element));
     CheckValueType(JsObject, Element, 'element 7 type');

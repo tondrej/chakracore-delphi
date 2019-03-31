@@ -392,8 +392,16 @@ begin
 end;
 
 function StringToJsString(const S: UnicodeString): JsValueRef;
+const
+  Null: UnicodeChar = #0;
+  PNull: PUnicodeChar = @Null;
+var
+  P: PUnicodeChar;
 begin
-  ChakraCoreCheck(JsCreateStringUtf16(PUnicodeChar(S), Length(S), Result));
+  P := PUnicodeChar(S);
+  if not Assigned(P) then
+    P := PNull;
+  ChakraCoreCheck(JsCreateStringUtf16(P, Length(S), Result));
 end;
 
 function JsEscapeString(const S: UTF8String): UTF8String;

@@ -449,7 +449,7 @@ begin
     begin
       AConstructor := JsCreateFunction(Native_ConstructorCallback, CallbackState,
         JsStringToUnicodeString(JsGetProperty(Callee, 'name')));
-      ChakraCoreCheck(JsAddRef(AConstructor, nil));
+      JsAddRef(AConstructor);
       APrototype := NativeClass.InitializePrototype(AConstructor);
       NativeClass.RegisterMethods(APrototype);
       NativeClass.RegisterProperties(APrototype);
@@ -852,7 +852,7 @@ var
 begin
   inherited Create(AContext);
   FTask := Task;
-  ChakraCoreCheck(JsAddRef(FTask, nil));
+  JsAddRef(FTask);
 
   FArgCount := Length(Args);
   FArgs := AllocMem((FArgCount + 1) * SizeOf(PJsValueRef));
@@ -860,12 +860,12 @@ begin
     FArgs^[0] := ThisArg
   else
     FArgs^[0] := Context.Global;
-  ChakraCoreCheck(JsAddRef(FArgs^[0], nil));
+  JsAddRef(FArgs^[0]);
 
   for I := 1 to FArgCount do
   begin
     FArgs^[I] := Args[I - 1];
-    ChakraCoreCheck(JsAddRef(FArgs^[I], nil));
+    JsAddRef(FArgs^[I]);
   end;
 
   FDelay := ADelay;
@@ -881,13 +881,13 @@ begin
   begin
     for I := 0 to FArgCount do
       if Assigned(FArgs^[I]) then
-        ChakraCoreCheck(JsRelease(FArgs^[I], nil));
+        JsRelease(FArgs^[I]);
     FreeMem(FArgs);
   end;
   FArgs := nil;
   FArgCount := 0;
   if Assigned(FTask) then
-    ChakraCoreCheck(JsRelease(FTask, nil));
+    JsRelease(FTask);
   FTask := nil;
   inherited Destroy;
 end;
@@ -921,27 +921,27 @@ constructor TPromiseMessage.Create(AContext: TChakraCoreContext; ThisArg, Resolv
 begin
   inherited Create(AContext);
   FArgs[0] := ThisArg;
-  ChakraCoreCheck(JsAddRef(FArgs[0], nil));
+  JsAddRef(FArgs[0]);
   FArgs[1] := nil;
   FResolveTask := ResolveTask;
-  ChakraCoreCheck(JsAddRef(FResolveTask, nil));
+  JsAddRef(FResolveTask);
   FRejectTask := RejectTask;
-  ChakraCoreCheck(JsAddRef(FRejectTask, nil));
+  JsAddRef(FRejectTask);
 end;
 
 destructor TPromiseMessage.Destroy;
 begin
   if Assigned(FRejectTask) then
-    ChakraCoreCheck(JsRelease(FRejectTask, nil));
+    JsRelease(FRejectTask);
   FRejectTask := nil;
   if Assigned(FResolveTask) then
-    ChakraCoreCheck(JsRelease(FResolveTask, nil));
+    JsRelease(FResolveTask);
   FResolveTask := nil;
   if Assigned(FArgs[0]) then
-    ChakraCoreCheck(JsRelease(FArgs[0], nil));
+    JsRelease(FArgs[0]);
   FArgs[0] := nil;
   if Assigned(FArgs[1]) then
-    ChakraCoreCheck(JsRelease(FArgs[1], nil));
+    JsRelease(FArgs[1]);
   FArgs[1] := nil;
   inherited Destroy;
 end;
@@ -1302,7 +1302,7 @@ var
 begin
   for I := FClassInfos.Count - 1 downto 0 do
   begin
-    ChakraCoreCheck(JsRelease(PNativeClassInfo(FClassInfos[I])^.AConstructor, nil));
+    JsRelease(PNativeClassInfo(FClassInfos[I])^.AConstructor);
     FreeMem(FClassInfos[I]);
   end;
   FreeAndNil(FClassInfos);
@@ -1630,7 +1630,7 @@ end;
 
 function TNativeObject.AddRef: Integer;
 begin
-  ChakraCoreCheck(JsAddRef(FInstance, @Result));
+  Result := JsAddRef(FInstance);
 end;
 
 class procedure TNativeObject.Project(const AName: UnicodeString; Scope: JsValueRef; UseStrictRules: Boolean);
@@ -1656,7 +1656,7 @@ end;
 
 function TNativeObject.Release: Integer;
 begin
-  ChakraCoreCheck(JsRelease(FInstance, @Result));
+  Result := JsRelease(FInstance);
 end;
 
 end.

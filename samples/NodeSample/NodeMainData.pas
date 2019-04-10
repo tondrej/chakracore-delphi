@@ -243,7 +243,7 @@ begin
   FMessage := AMessage;
   FTimeout := ATimeout;
   FValue := StringToJsString('Success!');
-  ChakraCoreCheck(JsAddRef(FValue, nil));
+  JsAddRef(FValue);
   FreeOnTerminate := True;
   inherited Create(False);
 end;

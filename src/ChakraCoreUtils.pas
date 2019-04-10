@@ -114,6 +114,9 @@ function JsNew(const ConstructorName: UnicodeString; const Args: array of JsValu
   ThisArg: JsValueRef = nil): JsValueRef; overload;
 function JsNew(AConstructor, ACallee: JsValueRef; const Args: array of JsValueRef): JsValueRef; overload;
 
+function JsAddRef(Value: JsValueRef): Integer;
+function JsRelease(Value: JsValueRef): Integer;
+
 function JsValueAsJsBoolean(Value: JsValueRef): JsValueRef;
 function JsValueAsJsNumber(Value: JsValueRef): JsValueRef;
 function JsValueAsJsObject(Value: JsValueRef): JsValueRef;
@@ -687,6 +690,16 @@ begin
   NewArgs[0] := ACallee;
   Move(Args[0], NewArgs[1], L * SizeOf(JsValueRef));
   ChakraCoreCheck(ChakraCommon.JsConstructObject(AConstructor, @NewArgs[0], L + 1, Result));
+end;
+
+function JsAddRef(Value: JsValueRef): Integer;
+begin
+  ChakraCoreCheck(ChakraCommon.JsAddRef(Value, @Result));
+end;
+
+function JsRelease(Value: JsValueRef): Integer;
+begin
+  ChakraCoreCheck(ChakraCommon.JsRelease(Value, @Result));
 end;
 
 function JsValueAsJsBoolean(Value: JsValueRef): JsValueRef;

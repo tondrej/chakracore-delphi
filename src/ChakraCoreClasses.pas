@@ -409,6 +409,15 @@ var
 begin
   Result := JsUndefinedValue;
   try
+    if not Assigned(CallbackState) then
+      raise Exception.Create('Native constructor callback: state not assigned');
+
+    if not Assigned(Args) then
+      raise Exception.Create('Native constructor callback: arguments not assigned');
+
+    if ArgCount < 1 then
+      raise Exception.CreateFmt('Native constructor callback: invalid argument count %d', [ArgCount]);
+
     if IsConstructCall then
     begin
       Inc(Args);
@@ -441,6 +450,12 @@ var
 begin
   Result := JsUndefinedValue;
   try
+    if not Assigned(CallbackState) then
+      raise Exception.Create('Native constructor getter callback: state not assigned');
+
+    if IsConstructCall then
+      raise Exception.Create('Native constructor getter callback: called as a constructor');
+
     Context := TChakraCoreContext.CurrentContext;
     Info := Context.FindClassInfo(NativeClass);
     if Assigned(Info) then
@@ -473,14 +488,20 @@ var
 begin
   Result := JsUndefinedValue;
   try
-    if IsConstructCall then
-      raise Exception.Create('Class method called as a constructor');
+    if not Assigned(CallbackState) then
+      raise Exception.Create('Native class method callback: state not assigned');
 
-    if not Assigned(Args) or (ArgCount = 0) then
-      raise Exception.Create('Invalid arguments');
+    if IsConstructCall then
+      raise Exception.Create('Native class method callback: called as a constructor');
+
+    if not Assigned(Args) then
+      raise Exception.Create('Native class method callback: arguments not assigned');
+
+    if ArgCount < 1 then
+      raise Exception.CreateFmt('Native class method callback: invalid argument count %d', [ArgCount]);
 
     if (JsGetValueType(Args^) <> JsFunction) then
-      raise Exception.Create('thisarg not a function');
+      raise Exception.Create('Native class method callback: thisarg not a function');
 
     Context := TChakraCoreContext.CurrentContext;
     Info := Context.FindClassInfo(Args^);
@@ -507,20 +528,29 @@ var
 begin
   Result := JsUndefinedValue;
   try
-    if IsConstructCall then
-      raise Exception.Create('Method called as a constructor');
+    if not Assigned(CallbackState) then
+      raise Exception.Create('Native method callback: state not assigned');
 
-    if not Assigned(Args) or (ArgCount = 0) then
-      raise Exception.Create('Invalid arguments');
+    if IsConstructCall then
+      raise Exception.Create('Native method callback: called as a constructor');
+
+    if not Assigned(Args) then
+      raise Exception.Create('Native method callback: arguments not assigned');
+
+    if ArgCount < 1 then
+      raise Exception.CreateFmt('Native method callback: invalid argument count %d', [ArgCount]);
 
     if (JsGetValueType(Args^) <> JsObject) then
-      raise Exception.Create('thisarg not an object');
+      raise Exception.Create('Native method callback: thisarg not an object');
 
     TMethod(NativeMethod).Code := CallbackState;
     TMethod(NativeMethod).Data := JsGetExternalData(Args^);
 
+    if not Assigned(TMethod(NativeMethod).Data) then
+      raise Exception.Create('Native method callback: external data not assigned');
+
     if Args^ <> TNativeObject(TMethod(NativeMethod).Data).Instance then
-      raise Exception.Create('thisarg not the registered instance');
+      raise Exception.Create('Native method callback: thisarg not the registered instance');
 
     Inc(Args);
     Dec(ArgCount);
@@ -539,17 +569,26 @@ var
 begin
   Result := JsUndefinedValue;
   try
-    if IsConstructCall then
-      raise Exception.Create('Property get accessor called as a constructor');
+    if not Assigned(CallbackState) then
+      raise Exception.Create('Native getter callback: state not assigned');
 
-    if not Assigned(Args) or (ArgCount <> 1) then // thisarg
-      raise Exception.Create('Invalid arguments');
+    if IsConstructCall then
+      raise Exception.Create('Native getter allback: called as a constructor');
+
+    if not Assigned(Args) then
+      raise Exception.Create('Native getter callback: arguments not assigned');
+
+    if ArgCount <> 1 then // thisarg
+      raise Exception.CreateFmt('Native getter callback: invalid argument count %d', [ArgCount]);
 
     TMethod(NativeMethod).Code := CallbackState;
     TMethod(NativeMethod).Data := JsGetExternalData(Args^);
 
+    if not Assigned(TMethod(NativeMethod).Data) then
+      raise Exception.Create('Native getter callback: external data not assigned');
+
     if Args^ <> TNativeObject(TMethod(NativeMethod).Data).Instance then
-      raise Exception.Create('thisarg not the registered instance');
+      raise Exception.Create('Native getter callback: thisarg not the registered instance');
 
     Result := NativeMethod;
   except
@@ -565,17 +604,26 @@ var
 begin
   Result := JsUndefinedValue;
   try
-    if IsConstructCall then
-      raise Exception.Create('Property set accessor called as a constructor');
+    if not Assigned(CallbackState) then
+      raise Exception.Create('Native setter callback: state not assigned');
 
-    if not Assigned(Args) or (ArgCount <> 2) then // thisarg, value
-      raise Exception.Create('Invalid arguments');
+    if IsConstructCall then
+      raise Exception.Create('Native setter allback: called as a constructor');
+
+    if not Assigned(Args) then
+      raise Exception.Create('Native setter callback: arguments not assigned');
+
+    if ArgCount <> 2 then // thisarg, value
+      raise Exception.CreateFmt('Native setter callback: invalid argument count %d', [ArgCount]);
 
     TMethod(NativeMethod).Code := CallbackState;
     TMethod(NativeMethod).Data := JsGetExternalData(Args^[0]);
 
+    if not Assigned(TMethod(NativeMethod).Data) then
+      raise Exception.Create('Native setter callback: external data not assigned');
+
     if Args^[0] <> TNativeObject(TMethod(NativeMethod).Data).Instance then
-      raise Exception.Create('thisarg not the registered instance');
+      raise Exception.Create('Native setter callback: thisarg not the registered instance');
 
     NativeMethod(Args^[1]);
   except

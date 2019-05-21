@@ -573,7 +573,7 @@ begin
       raise Exception.Create('Native getter callback: state not assigned');
 
     if IsConstructCall then
-      raise Exception.Create('Native getter allback: called as a constructor');
+      raise Exception.Create('Native getter callback: called as a constructor');
 
     if not Assigned(Args) then
       raise Exception.Create('Native getter callback: arguments not assigned');
@@ -608,7 +608,7 @@ begin
       raise Exception.Create('Native setter callback: state not assigned');
 
     if IsConstructCall then
-      raise Exception.Create('Native setter allback: called as a constructor');
+      raise Exception.Create('Native setter callback: called as a constructor');
 
     if not Assigned(Args) then
       raise Exception.Create('Native setter callback: arguments not assigned');

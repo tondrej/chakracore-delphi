@@ -5,7 +5,7 @@
 
 [Delphi](https://www.embarcadero.com/products/delphi) and [Free Pascal](https://www.freepascal.org) bindings and classes for Microsoft's [ChakraCore](https://github.com/Microsoft/ChakraCore) library.
 
-ChakraCore version: **1.11.11**
+ChakraCore version: **1.11.12**
 
 Supported compilers:
 - Delphi 7 or newer
@@ -29,5 +29,5 @@ or
 ```bash
 git clone --recurse-submodules https://github.com/tondrej/chakracore-delphi.git
 ```
-2. Download the binaries from the ChakraCore [Release](https://github.com/Microsoft/ChakraCore/releases/tag/v1.11.11) page
+2. Download the binaries from the ChakraCore [Release](https://github.com/Microsoft/ChakraCore/releases/tag/v1.11.12) page
 3. Enjoy!

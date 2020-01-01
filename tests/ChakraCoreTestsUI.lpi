@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="10"/>
+    <Version Value="11"/>
     <General>
       <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
@@ -12,7 +12,7 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
-      <StringTable InternalName="ChakraCoreTestsUI" LegalCopyright="© 2019 Ondrej Kelle" OriginalFilename="ChakraCoreTestsUI" ProductName="chakracore-delphi"/>
+      <StringTable InternalName="ChakraCoreTestsUI" LegalCopyright="© 2020 Ondrej Kelle" OriginalFilename="ChakraCoreTestsUI" ProductName="chakracore-delphi"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>
@@ -52,9 +52,10 @@
       <Version Value="2"/>
     </PublishOptions>
     <RunParams>
-      <local>
-        <FormatVersion Value="1"/>
-      </local>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="default"/>
+      </Modes>
     </RunParams>
     <RequiredPackages Count="3">
       <Item1>
@@ -102,7 +103,6 @@
     <CodeGeneration>
       <Checks>
         <IOChecks Value="True"/>
-        <RangeChecks Value="True"/>
         <OverflowChecks Value="True"/>
         <StackChecks Value="True"/>
       </Checks>

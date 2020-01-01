@@ -15,7 +15,7 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
-      <StringTable InternalName="NodeSample" LegalCopyright="© 2019 Ondrej Kelle" OriginalFilename="NodeSample"/>
+      <StringTable InternalName="NodeSample" LegalCopyright="© 2020 Ondrej Kelle" OriginalFilename="NodeSample"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>

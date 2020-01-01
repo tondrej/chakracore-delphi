@@ -102,7 +102,7 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=WasmSample;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=WasmSample;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=WasmSample;LegalCopyright=© 2020 Ondrej Kelle;LegalTrademarks=;OriginalFilename=WasmSample;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <SanitizedProjectName>WasmSample_Tokyo</SanitizedProjectName>
         <DCC_DependencyCheckOutputName>WasmSample.exe</DCC_DependencyCheckOutputName>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
@@ -244,11 +244,11 @@
         <DCC_Optimize>false</DCC_Optimize>
         <Debugger_RunParams>..\..\..\samples\WasmSample\scripts\main.js</Debugger_RunParams>
         <Manifest_File>None</Manifest_File>
-        <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.0;InternalName=WasmSample;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=WasmSample.exe;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);FileDescription=$(MSBuildProjectName);ProductName=$(MSBuildProjectName)</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileVersion=1.0.0.0;InternalName=WasmSample;LegalCopyright=© 2020 Ondrej Kelle;LegalTrademarks=;OriginalFilename=WasmSample.exe;ProductVersion=1.0.0.0;Comments=;ProgramID=com.embarcadero.$(MSBuildProjectName);FileDescription=$(MSBuildProjectName);ProductName=$(MSBuildProjectName)</VerInfo_Keys>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
         <VerInfo_IncludeVerInfo>false</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=WasmSample;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=WasmSample.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=WasmSample;LegalCopyright=© 2020 Ondrej Kelle;LegalTrademarks=;OriginalFilename=WasmSample.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <Icon_MainIcon>WasmSample_Icon.ico</Icon_MainIcon>
     </PropertyGroup>
     <ProjectExtensions>
@@ -282,7 +282,7 @@
                     <VersionInfoKeys Name="FileDescription"/>
                     <VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
                     <VersionInfoKeys Name="InternalName">WasmSample</VersionInfoKeys>
-                    <VersionInfoKeys Name="LegalCopyright">© 2019 Ondrej Kelle</VersionInfoKeys>
+                    <VersionInfoKeys Name="LegalCopyright">© 2020 Ondrej Kelle</VersionInfoKeys>
                     <VersionInfoKeys Name="LegalTrademarks"/>
                     <VersionInfoKeys Name="OriginalFilename">WasmSample</VersionInfoKeys>
                     <VersionInfoKeys Name="ProductName"/>

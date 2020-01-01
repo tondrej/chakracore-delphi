@@ -46,7 +46,7 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=WasmSample;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=WasmSample;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=WasmSample;LegalCopyright=© 2020 Ondrej Kelle;LegalTrademarks=;OriginalFilename=WasmSample;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <SanitizedProjectName>WasmSample_XE7</SanitizedProjectName>
         <DCC_DependencyCheckOutputName>WasmSample.exe</DCC_DependencyCheckOutputName>
     </PropertyGroup>
@@ -86,7 +86,7 @@
         <Debugger_RunParams>..\..\..\samples\WasmSample\scripts\main.js</Debugger_RunParams>
         <Manifest_File>None</Manifest_File>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=WasmSample;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=WasmSample.exe;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=WasmSample;LegalCopyright=© 2020 Ondrej Kelle;LegalTrademarks=;OriginalFilename=WasmSample.exe;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <ProjectExtensions>
         <Borland.Personality>Delphi.Personality.12</Borland.Personality>
@@ -119,7 +119,7 @@
                     <VersionInfoKeys Name="FileDescription"/>
                     <VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
                     <VersionInfoKeys Name="InternalName">WasmSample</VersionInfoKeys>
-                    <VersionInfoKeys Name="LegalCopyright">© 2019 Ondrej Kelle</VersionInfoKeys>
+                    <VersionInfoKeys Name="LegalCopyright">© 2020 Ondrej Kelle</VersionInfoKeys>
                     <VersionInfoKeys Name="LegalTrademarks"/>
                     <VersionInfoKeys Name="OriginalFilename">WasmSample.exe</VersionInfoKeys>
                     <VersionInfoKeys Name="ProductName"/>

@@ -40,14 +40,14 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1031</VerInfo_Locale>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=NodeSample;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=NodeSample.exe;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=NodeSample;LegalCopyright=© 2020 Ondrej Kelle;LegalTrademarks=;OriginalFilename=NodeSample.exe;ProductName=chakracore-delphi;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_DependencyCheckOutputName>NodeSample.exe</DCC_DependencyCheckOutputName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <VerInfo_Locale>1033</VerInfo_Locale>
         <Icon_MainIcon>NodeSample_Icon.ico</Icon_MainIcon>
         <Debugger_RunParams>..\..\..\samples\NodeSample\scripts\main.js</Debugger_RunParams>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=NodeSample;LegalCopyright=© 2019 Ondrej Kelle;LegalTrademarks=;OriginalFilename=NodeSample.exe;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=NodeSample;LegalCopyright=© 2020 Ondrej Kelle;LegalTrademarks=;OriginalFilename=NodeSample.exe;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
@@ -110,7 +110,7 @@
                     <VersionInfoKeys Name="FileDescription"/>
                     <VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
                     <VersionInfoKeys Name="InternalName">NodeSample</VersionInfoKeys>
-                    <VersionInfoKeys Name="LegalCopyright">© 2019 Ondrej Kelle</VersionInfoKeys>
+                    <VersionInfoKeys Name="LegalCopyright">© 2020 Ondrej Kelle</VersionInfoKeys>
                     <VersionInfoKeys Name="LegalTrademarks"/>
                     <VersionInfoKeys Name="OriginalFilename">NodeSample.exe</VersionInfoKeys>
                     <VersionInfoKeys Name="ProductName">chakracore-delphi</VersionInfoKeys>

@@ -1053,7 +1053,7 @@ type
   /// <returns>
   ///     The code <c>JsNoError</c> if the operation succeeded, a failure code otherwise.
   /// </returns>
-  function JsObjectDeleteProperty(_object, key: JsValueRef; useStrictRules: bool; out result: bool): JsErrorCode;
+  function JsObjectDeleteProperty(_object, key: JsValueRef; useStrictRules: bool; out result: JsValueRef): JsErrorCode;
       {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 
   /// <summary>

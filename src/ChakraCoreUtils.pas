@@ -1048,6 +1048,38 @@ begin
     UseStrictRules);
 end;
 
+function JsDeleteProperty(Value, Prop: JsValueRef; UseStrictRules: Boolean): Boolean;
+var
+  B: JsValueRef;
+begin
+  ChakraCoreCheck(JsObjectDeleteProperty(Value, Prop, UseStrictRules, B));
+  Result := JsBooleanToBoolean(JsValueAsJsBoolean(B));
+end;
+
+function JsDeleteProperty(Value: JsValueRef; PropId: JsPropertyIdRef; UseStrictRules: Boolean): Boolean;
+var
+  B: JsValueRef;
+begin
+  ChakraCoreCheck(ChakraCommon.JsDeleteProperty(Value, PropId, UseStrictRules, B));
+  Result := JsBooleanToBoolean(JsValueAsJsBoolean(B));
+end;
+
+function JsDeleteProperty(Value: JsValueRef; const PropName: UTF8String; UseStrictRules: Boolean): Boolean;
+var
+  B: JsValueRef;
+begin
+  ChakraCoreCheck(JsObjectDeleteProperty(Value, StringToJsString(PropName), UseStrictRules, B));
+  Result := JsBooleanToBoolean(JsValueAsJsBoolean(B));
+end;
+
+function JsDeleteProperty(Value: JsValueRef; const PropName: UnicodeString; UseStrictRules: Boolean): Boolean;
+var
+  B: JsValueRef;
+begin
+  ChakraCoreCheck(JsObjectDeleteProperty(Value, StringToJsString(PropName), UseStrictRules, B));
+  Result := JsBooleanToBoolean(JsValueAsJsBoolean(B));
+end;
+
 function JsParseScript(const Script, Name: UTF8String; SourceContext: NativeUInt; IsLibraryCode: Boolean): JsValueRef;
 const
   ParseScriptAttributes: array[Boolean] of JsParseScriptAttributes = ([], [JsParseScriptAttributeLibraryCode]);

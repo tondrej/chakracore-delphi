@@ -164,6 +164,10 @@ function JsDefineProperty(const PropName: UTF8String; Configurable, Enumerable: 
   GetAccessor, SetAccessor: JsValueRef; Scope: JsValueRef = nil; UseStrictRules: Boolean = True): Boolean; overload;
 function JsDefineProperty(const PropName: UnicodeString; Configurable, Enumerable: Boolean;
   GetAccessor, SetAccessor: JsValueRef; Scope: JsValueRef = nil; UseStrictRules: Boolean = True): Boolean; overload;
+function JsDeleteProperty(Value, Prop: JsValueRef; UseStrictRules: Boolean): Boolean; overload;
+function JsDeleteProperty(Value: JsValueRef; PropId: JsPropertyIdRef; UseStrictRules: Boolean): Boolean; overload;
+function JsDeleteProperty(Value: JsValueRef; const PropName: UTF8String; UseStrictRules: Boolean): Boolean; overload;
+function JsDeleteProperty(Value: JsValueRef; const PropName: UnicodeString; UseStrictRules: Boolean): Boolean; overload;
 
 function JsParseScript(const Script, Name: UTF8String; SourceContext: NativeUInt = 0;
   IsLibraryCode: Boolean = False): JsValueRef; overload;

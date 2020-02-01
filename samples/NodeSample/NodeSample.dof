@@ -130,8 +130,8 @@ FileVersion=1.0.0.0
 InternalName=NodeSample
 LegalCopyright=© 2020 Ondrej Kelle
 LegalTrademarks=
-OriginalFilename=NodeSample
-ProductName=
+OriginalFilename=NodeSample.exe
+ProductName=chakracore-delphi
 ProductVersion=1.0.0.0
 Comments=
 [HistoryLists\hlUnitAliases]

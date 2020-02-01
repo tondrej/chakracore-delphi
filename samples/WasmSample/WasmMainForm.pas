@@ -37,7 +37,7 @@ uses
   Windows,
 {$endif}
   SysUtils, Variants, Classes, Types, Messages,
-  Graphics, Controls, Forms, Dialogs, StdCtrls, ExtCtrls, ToolWin, ComCtrls, ActnList, ImgList;
+  Graphics, Controls, Forms, Dialogs, StdCtrls, ExtCtrls, ToolWin, ComCtrls, ActnList, ImgList, Compat;
 
 const
   Dimension = 50;
@@ -51,7 +51,7 @@ type
 {$ifdef CPU64}
     UnusedMsg: Cardinal;
 {$endif CPU64}
-    Text: PAnsiChar;
+    Text: PWideChar;
     Unusedl: NativeInt;
     Result: LRESULT;
   end;
@@ -90,7 +90,7 @@ implementation
 {$R *.dfm}
 
 uses
-  Compat, ChakraCore, ChakraCoreVersion, ChakraCoreUtils,
+  ChakraCore, ChakraCoreVersion, ChakraCoreUtils,
   WasmMainData;
 
 procedure TFormMain.FillRect(X, Y, W, H: Integer; const Style: string);
@@ -192,7 +192,8 @@ begin
     // inherited;
     MemoLog.Lines.Add(Message.Text);
   finally
-    StrDispose(Message.Text);
+    if Assigned(Message.Text) then
+      FreeMem(Message.Text);
   end;
 end;
 

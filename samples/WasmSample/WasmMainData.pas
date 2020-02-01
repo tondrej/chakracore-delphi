@@ -149,11 +149,7 @@ var
 begin
   Result := '';
 
-{$ifdef UNICODE}
   FileStream := TFileStream.Create(FileName, fmOpenRead);
-{$else}
-  FileStream := TFileStream.Create(UTF8Encode(FileName), fmOpenRead);
-{$endif}
   try
     if FileStream.Size = 0 then
       Exit;
@@ -213,7 +209,7 @@ begin
   Result := JsUndefinedValue;
   try
     FormMain.FillRect(JsNumberToInt(Args^[1]), JsNumberToInt(Args^[2]), JsNumbertoInt(Args^[3]), JsNumberToInt(Args^[4]),
-      JsStringToUTF8String(JsGetProperty(Args^[0], 'fillStyle')));
+      JsStringToUnicodeString(JsGetProperty(Args^[0], 'fillStyle')));
   except on E: Exception do
     JsThrowError(WideFormat('[%s] %s', [E.ClassName, E.Message]));
   end;
@@ -262,13 +258,19 @@ end;
 
 procedure TDataModuleMain.ConsoleLog(Sender: TObject; const Text: UnicodeString; Level: TInfoLevel);
 var
-  P: PAnsiChar;
+  P: PUnicodeChar;
+  L: Integer;
 begin
-  P := StrNew(PAnsiChar(UTF8Encode(Text)));
+  P := nil;
   try
+    L := Length(Text);
+    P := AllocMem((L + 1) * SizeOf(UnicodeChar));
+    if L > 0 then
+      Move(Text[1], P^, L * SizeOf(UnicodeChar));
     PostMessage(FormMain.Handle, WM_CONSOLELOG, WPARAM(P), 0);
   except
-    StrDispose(P);
+    if Assigned(P) then
+      FreeMem(P);
     raise;
   end;
 end;

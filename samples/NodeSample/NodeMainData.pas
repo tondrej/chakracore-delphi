@@ -37,7 +37,7 @@ uses
 {$ifdef WINDOWS}
   Windows,
 {$endif}
-  SysUtils, Classes, Contnrs,
+  SysUtils, Classes, Types, Contnrs,
 {$ifdef HAS_WIDESTRUTILS}
   WideStrUtils,
 {$endif}
@@ -128,7 +128,7 @@ var
 begin
   Result := '';
 
-  FileStream := TFileStream.Create(UTF8String(FileName), fmOpenRead);
+  FileStream := TFileStream.Create(FileName, fmOpenRead);
   try
     if FileStream.Size = 0 then
       Exit;
@@ -548,7 +548,7 @@ begin
     FContext.OnActivate := ContextActivate;
     FContext.OnLoadModule := ContextLoadModule;
     FContext.OnNativeObjectCreated := ContextNativeObjectCreated;
-    FBaseDir := UTF8Decode(GetCurrentDir);
+    FBaseDir := GetCurrentDir;
     FModules := TObjectList.Create;
   except
     FreeAndNil(FConsole);

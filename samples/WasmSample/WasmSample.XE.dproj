@@ -2,11 +2,9 @@
 		<PropertyGroup>
 			<ProjectGuid>{6508e7aa-0c87-481c-ae23-258f81176312}</ProjectGuid>
 			<MainSource>WasmSample.dpr</MainSource>
-			<Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
-			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-			<DCC_DependencyCheckOutputName>..\..\bin\Win32\Release\WasmSample.exe</DCC_DependencyCheckOutputName>
-			<ProjectVersion>12.3</ProjectVersion>
 			<Config Condition="'$(Config)'==''">Debug</Config>
+			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+			<ProjectVersion>12.3</ProjectVersion>
 			<Base>True</Base>
 			<Platform>Win32</Platform>
 			<AppType>Application</AppType>
@@ -26,42 +24,63 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<DCC_UnitSearchPath>..\..\src;..\..\samples\HostSample;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_DependencyCheckOutputName>..\..\bin\$(Platform)\$(Config)\WasmSample.exe</DCC_DependencyCheckOutputName>
+			<DCC_ExeOutput>..\..\bin\$(Platform)\$(Config)</DCC_ExeOutput>
+			<DCC_DcuOutput>..\..\lib\$(Platform)\$(Config)</DCC_DcuOutput>
+			<DCC_ImageBase>00400000</DCC_ImageBase>
+			<DCC_UsePackage>vcl;rtl;vclx;indy;inet;xmlrtl;vclie;inetdbbde;inetdbxpress;dbrtl;dsnap;dsnapcon;vcldb;soaprtl;VclSmp;dbexpress;dbxcds;inetdb;bdertl;vcldbx;webdsnap;websnap;adortl;ibxpress;teeui;teedb;tee;dss;visualclx;visualdbclx;vclactnband;vclshlctrls;IntrawebDB_50_70;Intraweb_50_70;Rave50CLX;Rave50VCL;dclOfficeXP;JclDeveloperTools;Jcl;JclVcl;JclContainers</DCC_UsePackage>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
-			<DCC_DependencyCheckOutputName>WasmSample.exe</DCC_DependencyCheckOutputName>
+			<DCC_Platform>x86</DCC_Platform>
+			<DCC_UnitSearchPath>..\..\src;..\HostSample;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_K>false</DCC_K>
+			<DCC_N>true</DCC_N>
+			<DCC_S>false</DCC_S>
+			<DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
+			<DCC_E>false</DCC_E>
+			<DCC_F>false</DCC_F>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_DependencyCheckOutputName>..\..\bin\Win32\Release\WasmSample.exe</DCC_DependencyCheckOutputName>
-			<Version>7.0</Version>
-			<DCC_DebugInformation>False</DCC_DebugInformation>
-			<DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
-			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
-			<DCC_ExeOutput>..\..\bin\Win32\Release</DCC_ExeOutput>
-			<DCC_DcuOutput>..\..\lib\Win32\Release</DCC_DcuOutput>
-			<DCC_ObjOutput>..\..\lib\Win32\Release</DCC_ObjOutput>
-			<DCC_HppOutput>..\..\lib\Win32\Release</DCC_HppOutput>
-			<DCC_ResourcePath>..\..\src;$(DCC_ResourcePath)</DCC_ResourcePath>
-			<DCC_ObjPath>..\..\src;$(DCC_ObjPath)</DCC_ObjPath>
-			<DCC_IncludePath>..\..\src;$(DCC_IncludePath)</DCC_IncludePath>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_DependencyCheckOutputName>..\..\bin\Win32\Debug\WasmSample.exe</DCC_DependencyCheckOutputName>
-			<Version>7.0</Version>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
-			<DCC_ExeOutput>..\..\bin\Win32\Debug</DCC_ExeOutput>
-			<DCC_DcuOutput>..\..\lib\Win32\Debug</DCC_DcuOutput>
-			<DCC_ObjOutput>..\..\lib\Win32\Debug</DCC_ObjOutput>
-			<DCC_HppOutput>..\..\lib\Win32\Debug</DCC_HppOutput>
-			<DCC_ResourcePath>..\..\src;$(DCC_ResourcePath)</DCC_ResourcePath>
-			<DCC_ObjPath>..\..\src;$(DCC_ObjPath)</DCC_ObjPath>
-			<DCC_IncludePath>..\..\src;$(DCC_IncludePath)</DCC_IncludePath>
 		</PropertyGroup>
+		<ItemGroup>
+			<DelphiCompile Include="WasmSample.dpr">
+				<MainSource>MainSource</MainSource>
+			</DelphiCompile>
+			<DCCReference Include="WasmMainData.pas">
+				<Form>DataModuleMain</Form>
+				<DesignClass>TDataModule</DesignClass>
+			</DCCReference>
+			<DCCReference Include="WasmMainForm.pas">
+				<Form>FormMain</Form>
+			</DCCReference>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Base">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
 			<Borland.ProjectType>VCLApplication</Borland.ProjectType>
 			<BorlandProject>
 				<Delphi.Personality>
+					<Source>
+						<Source Name="MainSource">WasmSample.dpr</Source>
+					</Source>
 					<Parameters>
 						<Parameters Name="RunParams">..\..\..\samples\WasmSample\scripts\main.js ..\..\..\samples\WasmSample\scripts\main.wasm</Parameters>
 					</Parameters>
@@ -88,13 +107,10 @@
 						<VersionInfoKeys Name="LegalCopyright">© 2020 Ondrej Kelle</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename">WasmSample</VersionInfoKeys>
-						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductName">chakracore-delphi</VersionInfoKeys>
 						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="Comments"/>
 					</VersionInfoKeys>
-					<Source>
-						<Source Name="MainSource">WasmSample.dpr</Source>
-					</Source>
 				</Delphi.Personality>
 				<Platforms>
 					<Platform value="Win32">True</Platform>
@@ -102,29 +118,4 @@
 			</BorlandProject>
 			<ProjectFileVersion>12</ProjectFileVersion>
 		</ProjectExtensions>
-		<ItemGroup>
-			<DelphiCompile Include="WasmSample.dpr">
-				<MainSource>MainSource</MainSource>
-			</DelphiCompile>
-			<DCCReference Include="WasmMainData.pas">
-				<Form>DataModuleMain</Form>
-				<DesignClass>TDataModule</DesignClass>
-			</DCCReference>
-			<DCCReference Include="WasmMainForm.pas">
-				<Form>FormMain</Form>
-			</DCCReference>
-			<BuildConfiguration Include="Debug">
-				<Key>Cfg_2</Key>
-				<CfgParent>Base</CfgParent>
-			</BuildConfiguration>
-			<BuildConfiguration Include="Base">
-				<Key>Base</Key>
-			</BuildConfiguration>
-			<BuildConfiguration Include="Release">
-				<Key>Cfg_1</Key>
-				<CfgParent>Base</CfgParent>
-			</BuildConfiguration>
-		</ItemGroup>
-		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
-		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
 	</Project>

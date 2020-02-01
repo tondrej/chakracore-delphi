@@ -82,11 +82,7 @@ var
 begin
   Result := '';
 
-{$ifdef UNICODE}
   FileStream := TFileStream.Create(FileName, fmOpenRead);
-{$else}
-  FileStream := TFileStream.Create(UTF8Encode(FileName), fmOpenRead);
-{$endif}
   try
     if FileStream.Size = 0 then
       Exit;

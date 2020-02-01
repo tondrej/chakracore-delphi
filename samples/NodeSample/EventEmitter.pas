@@ -31,7 +31,7 @@ unit EventEmitter;
 interface
 
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, Types,
   Compat, ChakraCore, ChakraCommon, ChakraCoreUtils, ChakraCoreClasses;
 
 const

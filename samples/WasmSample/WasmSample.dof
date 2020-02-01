@@ -130,18 +130,16 @@ FileVersion=1.0.0.0
 InternalName=WasmSample
 LegalCopyright=© 2020 Ondrej Kelle
 LegalTrademarks=
-OriginalFilename=WasmSample
-ProductName=
+OriginalFilename=WasmSample.exe
+ProductName=chakracore-delphi
 ProductVersion=1.0.0.0
 Comments=
 [HistoryLists\hlUnitAliases]
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
 [HistoryLists\hlSearchPath]
-Count=3
+Count=1
 Item0=..\..\src;..\..\samples\HostSample
-Item1=$(DELPHI)\Lib\Debug;..\..\src;..\..\samples\HostSample
-Item2=..\..\src
 [HistoryLists\hlUnitOutputDirectory]
 Count=1
 Item0=..\..\lib\Win32\Debug

@@ -2,11 +2,9 @@
 		<PropertyGroup>
 			<ProjectGuid>{2b63895c-8001-41eb-a2d0-6815b28b3222}</ProjectGuid>
 			<MainSource>ChakraCoreHostSample.dpr</MainSource>
-			<Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
-			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-			<DCC_DependencyCheckOutputName>..\..\bin\Win32\Release\ChakraCoreHostSample.exe</DCC_DependencyCheckOutputName>
-			<ProjectVersion>12.3</ProjectVersion>
 			<Config Condition="'$(Config)'==''">Debug</Config>
+			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+			<ProjectVersion>12.3</ProjectVersion>
 			<Base>True</Base>
 			<Platform>Win32</Platform>
 			<AppType>Console</AppType>
@@ -26,83 +24,30 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_DependencyCheckOutputName>..\..\bin\$(Platform)\$(Config)\ChakraCoreHostSample.exe</DCC_DependencyCheckOutputName>
+			<DCC_ExeOutput>..\..\bin\$(Platform)\$(Config)</DCC_ExeOutput>
+			<DCC_DcuOutput>..\..\lib\$(Platform)\$(Config)</DCC_DcuOutput>
+			<DCC_ImageBase>00400000</DCC_ImageBase>
+			<DCC_UsePackage>vcl;rtl;vclx;indy;inet;xmlrtl;vclie;inetdbbde;inetdbxpress;dbrtl;dsnap;dsnapcon;vcldb;soaprtl;VclSmp;dbexpress;dbxcds;inetdb;bdertl;vcldbx;webdsnap;websnap;adortl;ibxpress;teeui;teedb;tee;dss;visualclx;visualdbclx;vclactnband;vclshlctrls;IntrawebDB_50_70;Intraweb_50_70;Rave50CLX;Rave50VCL;dclOfficeXP;JclDeveloperTools;Jcl;JclVcl;JclContainers</DCC_UsePackage>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
-			<DCC_DependencyCheckOutputName>ChakraCoreHostSample.exe</DCC_DependencyCheckOutputName>
+			<DCC_Platform>x86</DCC_Platform>
+			<DCC_UnitSearchPath>..\..\src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_K>false</DCC_K>
+			<DCC_N>true</DCC_N>
+			<DCC_S>false</DCC_S>
+			<DCC_SymbolReferenceInfo>1</DCC_SymbolReferenceInfo>
+			<DCC_E>false</DCC_E>
+			<DCC_F>false</DCC_F>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
-			<DCC_DependencyCheckOutputName>..\..\bin\Win32\Release\ChakraCoreHostSample.exe</DCC_DependencyCheckOutputName>
-			<Version>7.0</Version>
-			<DCC_DebugInformation>False</DCC_DebugInformation>
-			<DCC_LocalDebugSymbols>False</DCC_LocalDebugSymbols>
-			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
 			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
-			<DCC_ExeOutput>..\..\bin\Win32\Release</DCC_ExeOutput>
-			<DCC_DcuOutput>..\..\lib\Win32\Release</DCC_DcuOutput>
-			<DCC_ObjOutput>..\..\lib\Win32\Release</DCC_ObjOutput>
-			<DCC_HppOutput>..\..\lib\Win32\Release</DCC_HppOutput>
-			<DCC_UnitSearchPath>..\..\src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-			<DCC_ResourcePath>..\..\src;$(DCC_ResourcePath)</DCC_ResourcePath>
-			<DCC_ObjPath>..\..\src;$(DCC_ObjPath)</DCC_ObjPath>
-			<DCC_IncludePath>..\..\src;$(DCC_IncludePath)</DCC_IncludePath>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_DebugInformation>false</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_DependencyCheckOutputName>..\..\bin\Win32\Debug\ChakraCoreHostSample.exe</DCC_DependencyCheckOutputName>
-			<Version>7.0</Version>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
-			<DCC_ExeOutput>..\..\bin\Win32\Debug</DCC_ExeOutput>
-			<DCC_DcuOutput>..\..\lib\Win32\Debug</DCC_DcuOutput>
-			<DCC_ObjOutput>..\..\lib\Win32\Debug</DCC_ObjOutput>
-			<DCC_HppOutput>..\..\lib\Win32\Debug</DCC_HppOutput>
-			<DCC_UnitSearchPath>..\..\src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-			<DCC_ResourcePath>..\..\src;$(DCC_ResourcePath)</DCC_ResourcePath>
-			<DCC_ObjPath>..\..\src;$(DCC_ObjPath)</DCC_ObjPath>
-			<DCC_IncludePath>..\..\src;$(DCC_IncludePath)</DCC_IncludePath>
 		</PropertyGroup>
-		<ProjectExtensions>
-			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
-			<Borland.ProjectType>VCLApplication</Borland.ProjectType>
-			<BorlandProject>
-				<Delphi.Personality>
-					<Parameters>
-						<Parameters Name="RunParams">..\..\..\samples\HostSample\scripts\main.js</Parameters>
-					</Parameters>
-					<VersionInfo>
-						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
-						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
-						<VersionInfo Name="MajorVer">1</VersionInfo>
-						<VersionInfo Name="MinorVer">0</VersionInfo>
-						<VersionInfo Name="Release">0</VersionInfo>
-						<VersionInfo Name="Build">0</VersionInfo>
-						<VersionInfo Name="Debug">False</VersionInfo>
-						<VersionInfo Name="PreRelease">False</VersionInfo>
-						<VersionInfo Name="Special">False</VersionInfo>
-						<VersionInfo Name="Private">False</VersionInfo>
-						<VersionInfo Name="DLL">False</VersionInfo>
-						<VersionInfo Name="Locale">1031</VersionInfo>
-						<VersionInfo Name="CodePage">1252</VersionInfo>
-					</VersionInfo>
-					<VersionInfoKeys>
-						<VersionInfoKeys Name="CompanyName"/>
-						<VersionInfoKeys Name="FileDescription"/>
-						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
-						<VersionInfoKeys Name="InternalName">hostsample</VersionInfoKeys>
-						<VersionInfoKeys Name="LegalCopyright">© 2020 Ondrej Kelle</VersionInfoKeys>
-						<VersionInfoKeys Name="LegalTrademarks"/>
-						<VersionInfoKeys Name="OriginalFilename">hostsample.exe</VersionInfoKeys>
-						<VersionInfoKeys Name="ProductName">chakracore-delphi</VersionInfoKeys>
-						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
-						<VersionInfoKeys Name="Comments"/>
-					</VersionInfoKeys>
-					<Source>
-						<Source Name="MainSource">ChakraCoreHostSample.dpr</Source>
-					</Source>
-				</Delphi.Personality>
-				<Platforms>
-					<Platform value="Win32">True</Platform>
-				</Platforms>
-			</BorlandProject>
-			<ProjectFileVersion>12</ProjectFileVersion>
-		</ProjectExtensions>
 		<ItemGroup>
 			<DelphiCompile Include="ChakraCoreHostSample.dpr">
 				<MainSource>MainSource</MainSource>
@@ -125,4 +70,49 @@
 		</ItemGroup>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
 		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
+		<ProjectExtensions>
+			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
+			<Borland.ProjectType>VCLApplication</Borland.ProjectType>
+			<BorlandProject>
+				<Delphi.Personality>
+					<Source>
+						<Source Name="MainSource">ChakraCoreHostSample.dpr</Source>
+					</Source>
+					<Parameters>
+						<Parameters Name="RunParams">..\..\..\samples\HostSample\scripts\main.js</Parameters>
+					</Parameters>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">0</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">False</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1033</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName">ChakraCoreHostSample</VersionInfoKeys>
+						<VersionInfoKeys Name="LegalCopyright">© 2020 Ondrej Kelle</VersionInfoKeys>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename">ChakraCoreHostSample.exe</VersionInfoKeys>
+						<VersionInfoKeys Name="ProductName">chakracore-delphi</VersionInfoKeys>
+						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+					</VersionInfoKeys>
+				</Delphi.Personality>
+				<Platforms>
+					<Platform value="Win32">True</Platform>
+				</Platforms>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
 	</Project>

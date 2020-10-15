@@ -1,18 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="10"/>
+    <Version Value="11"/>
     <General>
+      <Flags>
+        <MainUnitHasCreateFormStatements Value="False"/>
+        <MainUnitHasScaledStatement Value="False"/>
+      </Flags>
       <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
-      <Title Value="ChakraCoreTests"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
-      <StringTable InternalName="ChakraCoreTests" LegalCopyright="© 2020 Ondrej Kelle" OriginalFilename="ChakraCoreTests" ProductName="chakracore-delphi"/>
+      <StringTable InternalName="WmiSample" LegalCopyright="© 2020 Ondrej Kelle" OriginalFilename="WmiSample"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>
@@ -20,19 +23,11 @@
         <CompilerOptions>
           <Version Value="11"/>
           <Target>
-            <Filename Value="bin/$(TargetCPU)-$(TargetOS)/ChakraCoreTests"/>
+            <Filename Value="WmiSample"/>
           </Target>
           <SearchPaths>
-            <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="../src"/>
             <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <Parsing>
-            <SyntaxOptions>
-              <SyntaxMode Value="DelphiUnicode"/>
-              <UseAnsiStrings Value="False"/>
-            </SyntaxOptions>
-          </Parsing>
           <CodeGeneration>
             <SmartLinkUnit Value="True"/>
             <Optimizations>
@@ -53,66 +48,51 @@
     </PublishOptions>
     <RunParams>
       <local>
-        <FormatVersion Value="1"/>
-        <CommandLineParams Value="-a -p --format=plain"/>
+        <CommandLineParams Value="../../../samples/WmiSample/scripts/main.js"/>
       </local>
-      <environment>
-        <UserOverrides Count="1">
-          <Variable0 Name="LD_LIBRARY_PATH" Value="$Path($TargetFile)"/>
-        </UserOverrides>
-      </environment>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="Debug">
+          <local>
+            <CommandLineParams Value="../../../samples/WmiSample/scripts/main.js"/>
+          </local>
+        </Mode0>
+      </Modes>
     </RunParams>
-    <RequiredPackages Count="1">
-      <Item1>
-        <PackageName Value="FCL"/>
-      </Item1>
-    </RequiredPackages>
-    <Units Count="4">
+    <Units Count="1">
       <Unit0>
-        <Filename Value="ChakraCoreTests.dpr"/>
+        <Filename Value="WmiSample.dpr"/>
         <IsPartOfProject Value="True"/>
       </Unit0>
-      <Unit1>
-        <Filename Value="Test_ChakraCore.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit1>
-      <Unit2>
-        <Filename Value="Test_Classes.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit2>
-      <Unit3>
-        <Filename Value="Test_Variants.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="../bin/$(TargetCPU)-$(TargetOS)/$(BuildMode)/ChakraCoreTests"/>
+      <Filename Value="../../bin/$(TargetCPU)-$(TargetOS)/$(BuildMode)/WmiSample"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="../src"/>
-      <UnitOutputDirectory Value="../lib/$(TargetCPU)-$(TargetOS)/$(BuildMode)"/>
+      <IncludeFiles Value="$(ProjOutDir);../../src"/>
+      <OtherUnitFiles Value="../../src"/>
+      <UnitOutputDirectory Value="../../lib/$(TargetCPU)-$(TargetOS)/$(BuildMode)"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>
-        <SyntaxMode Value="Delphi"/>
         <IncludeAssertionCode Value="True"/>
-        <UseAnsiStrings Value="False"/>
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
       <Checks>
         <IOChecks Value="True"/>
+        <RangeChecks Value="True"/>
         <OverflowChecks Value="True"/>
         <StackChecks Value="True"/>
       </Checks>
+      <TargetCPU Value="x86_64"/>
+      <TargetOS Value="win64"/>
     </CodeGeneration>
     <Linking>
       <Debugging>
-        <DebugInfoType Value="dsDwarf2Set"/>
         <UseHeaptrc Value="True"/>
         <TrashVariables Value="True"/>
         <UseExternalDbgSyms Value="True"/>
@@ -120,22 +100,13 @@
     </Linking>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="5">
+    <Exceptions Count="2">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
       <Item2>
         <Name Value="ECodetoolError"/>
       </Item2>
-      <Item3>
-        <Name Value="EFOpenError"/>
-      </Item3>
-      <Item4>
-        <Name Value="EChakraCore"/>
-      </Item4>
-      <Item5>
-        <Name Value="EChakraCoreScript"/>
-      </Item5>
     </Exceptions>
   </Debugging>
 </CONFIG>

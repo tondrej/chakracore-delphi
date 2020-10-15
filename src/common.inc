@@ -37,21 +37,29 @@ SOFTWARE.
   {$define HAS_NATIVEUINT}
   {$define HAS_RAWBYTESTRING}
   {$define HAS_UINTPTR}
+  {$define HAS_VARUINT64}
+  {$define HAS_VARUSTRING]
   {$define SUPPORTS_CLASS_FIELDS}
   {$define SUPPORTS_UNICODE_STRING}
 {$endif}
 
 {$ifdef DELPHI}
-  {$ifdef DELPHIXE_UP}
-    {$define HAS_NATIVEUINT}
+  {$ifdef DELPHI2007_UP}
+    {$define HAS_WIDESTRUTILS}
   {$endif}
   {$ifdef DELPHI2009_UP}
     {$define HAS_RAWBYTESTRING}
+    {$define HAS_VARUINT64}
+    {$define HAS_VARUSTRING}
+  {$endif}
+  {$ifdef DELPHIXE_UP}
+    {$define HAS_NATIVEUINT}
   {$endif}
   {$ifdef DELPHIXE2_UP}
     {$define HAS_UINTPTR}
+    {$define HAS_GETDISPATCHINVOKEARGS}
   {$endif}
-  {$ifdef DELPHI2007_UP}
-    {$define HAS_WIDESTRUTILS}
+  {$ifdef DELPHIXE8_UP}
+    {$define HAS_FINALIZEDISPATCHINVOKEARGS}
   {$endif}
 {$endif}

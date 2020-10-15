@@ -106,6 +106,8 @@
         <OverflowChecks Value="True"/>
         <StackChecks Value="True"/>
       </Checks>
+      <TargetCPU Value="x86_64"/>
+      <TargetOS Value="win64"/>
     </CodeGeneration>
     <Linking>
       <Options>
@@ -114,9 +116,14 @@
         </Win32>
       </Options>
     </Linking>
+    <Other>
+      <OtherDefines Count="1">
+        <Define0 Value="DEBUG"/>
+      </OtherDefines>
+    </Other>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="5">
+    <Exceptions Count="6">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -132,6 +139,9 @@
       <Item5>
         <Name Value="EChakraCoreScript"/>
       </Item5>
+      <Item6>
+        <Name Value="EAssertionFailedError"/>
+      </Item6>
     </Exceptions>
   </Debugging>
 </CONFIG>

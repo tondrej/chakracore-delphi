@@ -37,6 +37,10 @@ uses
 {$endif}
   Compat, ChakraCommon, ChakraCore;
 
+const
+  MIN_SAFE_INTEGER = -9007199254740991; // Number.MIN_SAFE_INTEGER
+  MAX_SAFE_INTEGER =  9007199254740991; // Number.MAX_SAFE_INTEGER
+
 type
   EChakraCore = class(Exception)
     ErrorCode: JsErrorCode;
@@ -85,14 +89,21 @@ function JsEscapeString(const S: UnicodeString): UnicodeString; overload;
 
 function JsCreateArray(Length: Integer): JsValueRef;
 function JsArrayLength(Value: JsValueRef): Integer;
+function JsArrayOf(const Elements: array of JsValueRef): JsValueRef;
 function JsArrayGetElement(Value: JsValueRef; Index: Integer): JsValueRef;
 procedure JsArraySetElement(Value: JsValueRef; Index: Integer; ElementValue: JsValueRef);
 function StringsToJsArray(const Strings: array of UnicodeString): JsValueRef; overload;
 function StringsToJsArray(const Strings: array of UTF8String): JsValueRef; overload;
 
+function DateTimeToJsDate(Value: TDateTime): JsValueRef;
+function JsDate(Year, Month, Day, Hour, Minute, Second, MilliSecond: Word): JsValueRef;
+function JsDateToDateTime(Value: JsValueRef): TDateTime;
+
 function JsBooleanToBoolean(Value: JsValueRef): Boolean;
 function JsNumberToDouble(Value: JsValueRef): Double;
 function JsNumberToInt(Value: JsValueRef): Integer;
+function JsNumberIsInteger(Value: JsValueRef): Boolean;
+function JsNumberIsSafeInteger(Value: JsValueRef): Boolean;
 function JsStringToUnicodeString(Value: JsValueRef): UnicodeString;
 function JsStringToUTF8String(Value: JsValueRef): UTF8String;
 procedure JsEnumArray(Value: JsValueRef; EnumFunc: TJsEnumArrayFunc; Data: Pointer = nil);
@@ -102,12 +113,12 @@ function JsInspect(Value: JsValueRef): UnicodeString;
 function JsInspectArray(Value: JsValueRef): UnicodeString;
 function JsInspectObject(Value: JsValueRef): UnicodeString;
 
-function JsContextOf(Instance: JsValueRef): JsContextRef;
+function JsContextOf(Value: JsValueRef): JsContextRef;
 function JsGlobal: JsValueRef;
-function JsGetPrototype(Instance: JsValueRef): JsValueRef;
-function JsInstanceOf(Instance: JsValueRef; const ConstructorName: UnicodeString; ThisArg: JsValueRef = nil): Boolean;
+function JsGetPrototype(Value: JsValueRef): JsValueRef;
+function JsInstanceOf(Value: JsValueRef; const ConstructorName: UnicodeString; ThisArg: JsValueRef = nil): Boolean;
   overload;
-function JsInstanceOf(Instance, AConstructor: JsValueRef): Boolean; overload;
+function JsInstanceOf(Value, AConstructor: JsValueRef): Boolean; overload;
 function JsNew(const ConstructorName: UTF8String; const Args: array of JsValueRef;
   ThisArg: JsValueRef = nil): JsValueRef; overload;
 function JsNew(const ConstructorName: UnicodeString; const Args: array of JsValueRef;
@@ -123,6 +134,8 @@ function JsValueAsJsObject(Value: JsValueRef): JsValueRef;
 function JsValueAsJsString(Value: JsValueRef): JsValueRef;
 
 function JsEqual(Value1, Value2: JsValueRef; AStrict: Boolean = False): Boolean;
+function JsLessThan(Value1, Value2: JsValueRef): Boolean;
+function JsLessThanOrEqual(Value1, Value2: JsValueRef): Boolean;
 function JsGetErrorMessage(ErrorCode: JsErrorCode): PResStringRec;
 
 function JsCreateObject(APrototype: JsValueRef = nil): JsValueRef;
@@ -186,12 +199,12 @@ function JsSetCallback(Instance: JsValueRef; const CallbackName: UTF8String; Cal
   CallbackState: Pointer; UseStrictRules: Boolean = True): JsValueRef; overload;
 function JsSetCallback(Instance: JsValueRef; const CallbackName: UnicodeString; Callback: JsNativeFunction;
   CallbackState: Pointer; UseStrictRules: Boolean = True): JsValueRef; overload;
-procedure JsSetProperty(Instance, Prop, Value: JsValueRef; UseStrictRules: Boolean = True); overload;
-procedure JsSetProperty(Instance: JsValueRef; PropId: JsPropertyIdRef; Value: JsValueRef;
+procedure JsSetProperty(Value, Prop, PropValue: JsValueRef; UseStrictRules: Boolean = True); overload;
+procedure JsSetProperty(Value: JsValueRef; PropId: JsPropertyIdRef; PropValue: JsValueRef;
   UseStrictRules: Boolean = True); overload;
-procedure JsSetProperty(Instance: JsValueRef; const PropName: UTF8String; Value: JsValueRef;
+procedure JsSetProperty(Value: JsValueRef; const PropName: UTF8String; PropValue: JsValueRef;
   UseStrictRules: Boolean = True); overload;
-procedure JsSetProperty(Instance: JsValueRef; const PropName: UnicodeString; Value: JsValueRef;
+procedure JsSetProperty(Value: JsValueRef; const PropName: UnicodeString; PropValue: JsValueRef;
   UseStrictRules: Boolean = True); overload;
 function JsCreateError(const AMessage: UTF8String; ErrorType: TErrorType = etGenericError): JsValueRef; overload;
 function JsCreateError(const AMessage: UnicodeString; ErrorType: TErrorType = etGenericError): JsValueRef; overload;
@@ -441,6 +454,20 @@ begin
   Result := JsNumberToInt(JsGetProperty(Value, 'length'));
 end;
 
+function JsArrayOf(const Elements: array of JsValueRef): JsValueRef;
+var
+  L, I: Integer;
+begin
+  Result := JsUndefinedValue;
+  L := Length(Elements);
+  if L = 0 then
+    Exit;
+
+  Result := JsCreateArray(L);
+  for I := 0 to L - 1 do
+    JsArraySetElement(Result, I, Elements[I]);
+end;
+
 function JsArrayGetElement(Value: JsValueRef; Index: Integer): JsValueRef;
 begin
   ChakraCoreCheck(JsGetIndexedProperty(Value, IntToJsNumber(Index), Result));
@@ -471,6 +498,40 @@ begin
     JsArraySetElement(Result, I, StringToJsString(Strings[I]));
 end;
 
+function DateTimeToJsDate(Value: TDateTime): JsValueRef;
+var
+  Year, Month, Day, Hour, Minute, Second, MilliSecond: Word;
+begin
+  DecodeDate(Value, Year, Month, Day);
+  DecodeTime(Value, Hour, Minute, Second, MilliSecond);
+  Result := JsDate(Year, Month, Day, Hour, Minute, Second, MilliSecond);
+end;
+
+function JsDate(Year, Month, Day, Hour, Minute, Second, MilliSecond: Word): JsValueRef;
+begin
+  // new Date(Date.UTC(year, month, day, hour, minute, second, millisecond));
+  Result := JsNew('Date', [JsCallFunction('UTC', [IntToJsNumber(Year), IntToJsNumber(Month - 1),
+    IntToJsNumber(Day), IntToJsNumber(Hour), IntToJsNumber(Minute), IntToJsNumber(Second), IntToJsNumber(MilliSecond)],
+    JsGetProperty(JsGlobal, 'Date'))]);
+end;
+
+function JsDateToDateTime(Value: JsValueRef): TDateTime;
+begin
+  Result := ComposeDateTime(
+    EncodeDate(
+      JsNumberToInt(JsCallFunction('getUTCFullYear', [], Value)),
+      JsNumberToInt(JsCallFunction('getUTCMonth', [], Value)) + 1,
+      JsNumberToInt(JsCallFunction('getUTCDate', [], Value))
+    ),
+    EncodeTime(
+      JsNumberToInt(JsCallFunction('getUTCHours', [], Value)),
+      JsNumberToInt(JsCallFunction('getUTCMinutes', [], Value)),
+      JsNumberToInt(JsCallFunction('getUTCSeconds', [], Value)),
+      JsNumberToInt(JsCallFunction('getUTCMilliseconds', [], Value))
+    )
+  );
+end;
+
 function JsBooleanToBoolean(Value: JsValueRef): Boolean;
 var
   B: ByteBool;
@@ -489,6 +550,18 @@ function JsNumberToInt(Value: JsValueRef): Integer;
 begin
   Result := -1;
   ChakraCoreCheck(ChakraCommon.JsNumberToInt(Value, Result));
+end;
+
+function JsNumberIsInteger(Value: JsValueRef): Boolean;
+begin
+  // Number.isInteger(value)
+  Result := JsBooleanToBoolean(JsCallFunction('isInteger', [Value], JsGetProperty(JsGlobal, 'Number')));
+end;
+
+function JsNumberIsSafeInteger(Value: JsValueRef): Boolean;
+begin
+  // Number.isSafeInteger(value)
+  Result := JsBooleanToBoolean(JsCallFunction('isSafeInteger', [Value], JsGetProperty(JsGlobal, 'Number')));
 end;
 
 function JsStringToUnicodeString(Value: JsValueRef): UnicodeString;
@@ -633,9 +706,9 @@ begin
   JsEnumProperties(Value, _JsInspectObjectProperty, @Result);
 end;
 
-function JsContextOf(Instance: JsValueRef): JsContextRef;
+function JsContextOf(Value: JsValueRef): JsContextRef;
 begin
-  ChakraCoreCheck(JsGetContextOfObject(Instance, Result));
+  ChakraCoreCheck(JsGetContextOfObject(Value, Result));
 end;
 
 function JsGlobal: JsValueRef;
@@ -643,23 +716,23 @@ begin
   ChakraCoreCheck(JsGetGlobalObject(Result));
 end;
 
-function JsGetPrototype(Instance: JsValueRef): JsValueRef;
+function JsGetPrototype(Value: JsValueRef): JsValueRef;
 begin
-  ChakraCoreCheck(ChakraCommon.JsGetPrototype(Instance, Result));
+  ChakraCoreCheck(ChakraCommon.JsGetPrototype(Value, Result));
 end;
 
-function JsInstanceOf(Instance: JsValueRef; const ConstructorName: UnicodeString; ThisArg: JsValueRef): Boolean;
+function JsInstanceOf(Value: JsValueRef; const ConstructorName: UnicodeString; ThisArg: JsValueRef): Boolean;
 begin
   if not Assigned(ThisArg) then
     ThisArg := JsGlobal;
-  Result := JsInstanceOf(Instance, JsGetProperty(ThisArg, ConstructorName));
+  Result := JsInstanceOf(Value, JsGetProperty(ThisArg, ConstructorName));
 end;
 
-function JsInstanceOf(Instance, AConstructor: JsValueRef): Boolean;
+function JsInstanceOf(Value, AConstructor: JsValueRef): Boolean;
 var
   B: ByteBool;
 begin
-  ChakraCoreCheck(ChakraCommon.JsInstanceOf(Instance, AConstructor, B));
+  ChakraCoreCheck(ChakraCommon.JsInstanceOf(Value, AConstructor, B));
   Result := B;
 end;
 
@@ -734,6 +807,22 @@ begin
     ChakraCoreCheck(JsStrictEquals(Value1, Value2, B))
   else
     ChakraCoreCheck(JsEquals(Value1, Value2, B));
+  Result := B;
+end;
+
+function JsLessThan(Value1, Value2: JsValueRef): Boolean;
+var
+  B: ByteBool;
+begin
+  ChakraCoreCheck(ChakraCore.JsLessThan(Value1, Value2, B));
+  Result := B;
+end;
+
+function JsLessThanOrEqual(Value1, Value2: JsValueRef): Boolean;
+var
+  B: ByteBool;
+begin
+  ChakraCoreCheck(ChakraCore.JsLessThanOrEqual(Value1, Value2, B));
   Result := B;
 end;
 
@@ -1166,25 +1255,25 @@ begin
   Result := JsSetCallback(Instance, UTF8Encode(CallbackName), Callback, CallbackState, UseStrictRules);
 end;
 
-procedure JsSetProperty(Instance, Prop, Value: JsValueRef; UseStrictRules: Boolean);
+procedure JsSetProperty(Value, Prop, PropValue: JsValueRef; UseStrictRules: Boolean);
 begin
-  ChakraCoreCheck(JsObjectSetProperty(Instance, Prop, Value, UseStrictRules));
+  ChakraCoreCheck(JsObjectSetProperty(Value, Prop, PropValue, UseStrictRules));
 end;
 
-procedure JsSetProperty(Instance: JsValueRef; PropId: JsPropertyIdRef; Value: JsValueRef; UseStrictRules: Boolean);
+procedure JsSetProperty(Value: JsValueRef; PropId: JsPropertyIdRef; PropValue: JsValueRef; UseStrictRules: Boolean);
 begin
-  ChakraCoreCheck(ChakraCommon.JsSetProperty(Instance, PropId, Value, UseStrictRules));
+  ChakraCoreCheck(ChakraCommon.JsSetProperty(Value, PropId, PropValue, UseStrictRules));
 end;
 
-procedure JsSetProperty(Instance: JsValueRef; const PropName: UTF8String; Value: JsValueRef; UseStrictRules: Boolean);
+procedure JsSetProperty(Value: JsValueRef; const PropName: UTF8String; PropValue: JsValueRef; UseStrictRules: Boolean);
 begin
-  ChakraCoreCheck(JsObjectSetProperty(Instance, StringToJsString(PropName), Value, UseStrictRules));
+  ChakraCoreCheck(JsObjectSetProperty(Value, StringToJsString(PropName), PropValue, UseStrictRules));
 end;
 
-procedure JsSetProperty(Instance: JsValueRef; const PropName: UnicodeString; Value: JsValueRef;
+procedure JsSetProperty(Value: JsValueRef; const PropName: UnicodeString; PropValue: JsValueRef;
   UseStrictRules: Boolean);
 begin
-  ChakraCoreCheck(JsObjectSetProperty(Instance, StringToJsString(PropName), Value, UseStrictRules));
+  ChakraCoreCheck(JsObjectSetProperty(Value, StringToJsString(PropName), PropValue, UseStrictRules));
 end;
 
 const

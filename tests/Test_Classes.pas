@@ -45,9 +45,9 @@ uses
 
 type
 
-  { TChakraCoreContextTestCase }
+  { TErrors }
 
-  TChakraCoreContextTestCase = class(TBaseTestCase)
+  TErrors = class(TBaseTestCase)
   published
     procedure TestScriptReferenceError;
     procedure TestScriptSyntaxError;
@@ -55,9 +55,9 @@ type
     procedure TestEvalSyntaxError;
   end;
 
-  { TNativeClassTestCase }
+  { TNativeClasses }
 
-  TNativeClassTestCase = class(TBaseTestCase)
+  TNativeClasses = class(TBaseTestCase)
   published
     procedure TestMethod1AsScript;
     procedure TestMethod1AsFunction;
@@ -75,9 +75,9 @@ type
 
 implementation
 
-{ TChakraCoreContextTestCase }
+{ TErrors }
 
-procedure TChakraCoreContextTestCase.TestScriptReferenceError;
+procedure TErrors.TestScriptReferenceError;
 const
   SScript = 'badref.bla();';
   SName = 'TestScriptReferenceError.js';
@@ -110,7 +110,7 @@ begin
   end;
 end;
 
-procedure TChakraCoreContextTestCase.TestScriptSyntaxError;
+procedure TErrors.TestScriptSyntaxError;
 const
   SScript: array[0..1] of UnicodeString = (
     '// first line comment',
@@ -146,7 +146,7 @@ begin
   end;
 end;
 
-procedure TChakraCoreContextTestCase.TestEvalReferenceError;
+procedure TErrors.TestEvalReferenceError;
 const
   SScript = 'badref.bla();';
   SName = 'TestEvalReferenceError.js';
@@ -179,7 +179,7 @@ begin
   end;
 end;
 
-procedure TChakraCoreContextTestCase.TestEvalSyntaxError;
+procedure TErrors.TestEvalSyntaxError;
 const
   SScript = 'eval(''@ bad syntax'');';
   SName = 'TestEvalSyntaxError.js';
@@ -261,9 +261,9 @@ begin
   RegisterNamedProperty(AInstance, 'prop1', False, False, @TTestObject1.GetProp1, @TTestObject1.SetProp1);
 end;
 
-{ TNativeClassTestCase }
+{ TNativeClasses }
 
-procedure TNativeClassTestCase.TestMethod1AsScript;
+procedure TNativeClasses.TestMethod1AsScript;
 var
   Runtime: TChakraCoreRuntime;
   Context: TChakraCoreContext;
@@ -290,7 +290,7 @@ begin
   end;
 end;
 
-procedure TNativeClassTestCase.TestMethod1AsFunction;
+procedure TNativeClasses.TestMethod1AsFunction;
 var
   Runtime: TChakraCoreRuntime;
   Context: TChakraCoreContext;
@@ -317,7 +317,7 @@ begin
   end;
 end;
 
-procedure TNativeClassTestCase.TestNamedProperty;
+procedure TNativeClasses.TestNamedProperty;
 const
   SValue: UnicodeString = 'Hello';
 var
@@ -344,7 +344,7 @@ begin
   end;
 end;
 
-procedure TNativeClassTestCase.TestProjectedClass;
+procedure TNativeClasses.TestProjectedClass;
 const
   SScript: UnicodeString = 'var obj = new TestObject(); var s1 = obj.method1(); obj.prop1 = s1; var s2 = obj.prop1;';
 var
@@ -367,13 +367,13 @@ begin
   end;
 end;
 
-procedure TNativeClassTestCase.TestClassProjectedTwice;
+procedure TNativeClasses.TestClassProjectedTwice;
 begin
   TestProjectedClass;
   TestProjectedClass;
 end;
 
-procedure TNativeClassTestCase.TestClassProjectedInMultipleContexts;
+procedure TNativeClasses.TestClassProjectedInMultipleContexts;
 const
   SScript: UnicodeString = 'var obj = new TestObject(); var s1 = obj.method1(); obj.prop1 = s1; var s2 = obj.prop1;';
 var
@@ -449,7 +449,7 @@ begin
     Result := inherited InitializePrototype(AConstructor);
 end;
 
-procedure TNativeClassTestCase.TestInheritance;
+procedure TNativeClasses.TestInheritance;
 // same tests as in TChakraCorePrototypes.TestInheritance, against ChakraCoreClasses.TNativeObject implementation
 // - Shape (x, y) => Object
 //   - Circle (x, y, r) => Shape (x, y)
@@ -594,7 +594,7 @@ begin
   inherited InitializeInstance(AInstance, @RectangleArgs[0], 4);
 end;
 
-procedure TNativeClassTestCase.TestInheritance2;
+procedure TNativeClasses.TestInheritance2;
 const
   SScript =
     // Shape: (Javascript) superclass
@@ -734,7 +734,7 @@ begin
 end;
 
 // see that the finalizer gets called for a native instance if/when GC runs
-procedure TNativeClassTestCase.TestFinalizer;
+procedure TNativeClasses.TestFinalizer;
 const
   SScript =
     // create native instance from script
@@ -773,7 +773,7 @@ begin
 end;
 
 // see that the finalizer gets called for a native instance if/when GC runs, or when the runtime is disposed
-procedure TNativeClassTestCase.TestFinalizer2;
+procedure TNativeClasses.TestFinalizer2;
 const
   SScript =
     'var obj = new TestObject2();'                               + sLineBreak +
@@ -804,7 +804,7 @@ begin
 end;
 
 // see that the finalizer gets called for a native instance if/when GC runs (invoked by host)
-procedure TNativeClassTestCase.TestFinalizer3;
+procedure TNativeClasses.TestFinalizer3;
 const
   SScript =
     'var obj = new TestObject2();'                               + sLineBreak +
@@ -840,7 +840,7 @@ const
 
 // see that repeated construction of a projected class no longer causes access violation
 // (constructors addrefed to prevent premature GC)
-procedure TNativeClassTestCase.TestFinalizer4;
+procedure TNativeClasses.TestFinalizer4;
 const
   SScript =
     'var obj = new TestObject2();'                               + sLineBreak +
@@ -876,9 +876,11 @@ end;
 initialization
 
 {$ifdef FPC}
-  RegisterTests([TChakraCoreContextTestCase, TNativeClassTestCase]);
+  RegisterTest('ChakraCoreClasses', TTestSuite.Create(TErrors, 'Errors'));
+  RegisterTest('ChakraCoreClasses', TTestSuite.Create(TNativeClasses, 'Native Classes'));
 {$else}
-  RegisterTests([TChakraCoreContextTestCase.Suite, TNativeClassTestCase.Suite]);
+  RegisterTest('ChakraCoreClasses', TErrors.Suite('Errors'));
+  RegisterTest('ChakraCoreClasses', TNativeClasses.Suite('Native Classes'));
 {$endif}
 
 end.

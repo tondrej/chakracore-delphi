@@ -73,6 +73,15 @@ type
 {$endif}
 
 {$ifdef DELPHI}
+type
+  PSystemTime = ^TSystemTime;
+  TSystemTime = record
+    Year, Month, Day, DayOfWeek: Word;
+    Hour, Minute, Second, MilliSecond: Word;
+  end;
+
+function ComposeDateTime(Date,Time : TDateTime) : TDateTime;
+function SystemTimeToDateTime(const SystemTime: TSystemTime): TDateTime;
 function UnicodeFormat(const Format: UnicodeString; const Args: array of const): UnicodeString;
 function UnicodeSameText(const S1, S2: UnicodeString): Boolean;
 function UnicodeStringReplace(const S, OldPattern, NewPattern: UnicodeString; Flags: TReplaceFlags): UnicodeString;
@@ -118,6 +127,11 @@ uses
   machoreader,
   {$endif}
   fileinfo;
+{$else}
+{$ifdef HAS_WIDESTRUTILS}
+uses
+  WideStrUtils;
+{$endif}
 {$endif}
 
 {$ifdef FPC}
@@ -197,6 +211,18 @@ end;
 {$endif}
 
 {$ifdef DELPHI}
+function SystemTimeToDateTime(const SystemTime: TSystemTime): TDateTime;
+begin
+  Result := ComposeDateTime(EncodeDate(Systemtime.Year, SystemTime.Month, SystemTime.Day),
+    EncodeTime(SystemTime.Hour, SystemTime.Minute, SystemTime.Second, SystemTime.MilliSecond));
+end;
+
+function ComposeDateTime(Date,Time : TDateTime) : TDateTime;
+begin
+  if Date < 0 then Result := trunc(Date) - Abs(frac(Time))
+  else Result := trunc(Date) + Abs(frac(Time));
+end;
+
 function UnicodeFormat(const Format: UnicodeString; const Args: array of const): UnicodeString;
 begin
 {$ifdef UNICODE}
@@ -227,8 +253,15 @@ end;
 
 {$ifdef DELPHIXE2_UP}
 const
-  ArchitectureStrings: array[TOSVersion.TArchitecture] of string = ('x86', 'x64', 'arm32'{$ifdef DELPHIX_BERLIN_UP}, 'arm64'{$endif});
-  PlatformStrings: array[TOSVersion.TPlatform] of string = ('Windows', 'MacOS', 'iOS', 'Android', 'WinRT', 'Linux');
+  ArchitectureStrings: array[TOSVersion.TArchitecture] of string = (
+  'x86', 'x64'
+  {$ifdef DELPHIXE3_UP}, 'arm32'{$endif}
+  {$ifdef DELPHIX_BERLIN_UP}, 'arm64'{$endif}
+  );
+  PlatformStrings: array[TOSVersion.TPlatform] of string = (
+    'Windows', 'MacOS'
+    {$ifdef DELPHIXE3_UP}, 'iOS', 'Android', 'WinRT', 'Linux'{$endif}
+  );
 {$endif}
 
 function GetBuildInfoString: string;

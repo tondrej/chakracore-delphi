@@ -42,6 +42,9 @@ uses
 {$endif}
   Compat, ChakraCoreVersion, ChakraCommon, ChakraCore, ChakraDebug, ChakraCoreUtils;
 
+const
+  DefaultDelta = 0.00001;
+
 type
 
   { TBaseTestCase }
@@ -51,9 +54,13 @@ type
 {$ifdef DELPHI}
     // work around Delphi 2007 and earlier compiler error "Ambiguous overloaded call to 'CheckEquals'"
     procedure CheckEquals(expected, actual: Integer; msg: string = ''); override;
-    // DUnit needs a delta when comparing float values
-    procedure CheckEquals(expected, actual: extended; msg: string = ''); reintroduce; overload;
+    procedure CheckEquals(expected, actual: Word; msg: string = ''); reintroduce; overload;
+    procedure CheckEquals(expected, actual: LongWord; msg: string = ''); override;
+    procedure CheckEquals(expected, actual: Int64; msg: string = ''); override;
+    class function Suite(const AName: string): ITestSuite; reintroduce;
 {$endif}
+    procedure CheckEquals(expected, actual: Extended; delta: Extended = DefaultDelta; const msg: string = ''); reintroduce; overload;
+    procedure CheckEquals(expected, actual: Extended; const msg: string); reintroduce; overload;
     procedure CheckEquals(expected, actual: JsValueType; const msg: string = ''); overload;
     procedure CheckEquals(expected, actual: JsTypedArrayType; const msg: string = ''); overload;
     procedure CheckValueType(expected: JsValueType; value: JsValueRef; const msg: string = '');
@@ -68,9 +75,11 @@ type
     procedure TearDown; override;
   end;
 
+  { TChakraCoreUtilsScripting }
+
   TChakraCoreUtilsScripting = class(TChakraCoreTestCase)
   published
-    procedure TestVersion;
+    procedure ChakraCoreVersion;
     procedure TestUndefined;
     procedure TestNull;
     procedure TestInt;
@@ -124,13 +133,49 @@ begin
   inherited CheckEquals(expected, actual, msg);
 end;
 
-procedure TBaseTestCase.CheckEquals(expected, actual: extended; msg: string);
-const
-  DefaultDelta = 0.0000001;
+procedure TBaseTestCase.CheckEquals(expected, actual: Word; msg: string = '');
 begin
-  inherited CheckEquals(expected, actual, DefaultDelta, msg);
+  inherited CheckEquals(Integer(expected), Integer(actual), msg);
+end;
+
+procedure TBaseTestCase.CheckEquals(expected, actual: LongWord; msg: string = '');
+begin
+  inherited CheckEquals(expected, actual, msg);
+end;
+
+procedure TBaseTestCase.CheckEquals(expected, actual: Int64; msg: string);
+begin
+  inherited CheckEquals(expected, actual, msg);
+end;
+
+class function TBaseTestCase.Suite(const AName: string): ITestSuite;
+var
+  Obj: TTestSuite;
+begin
+  Obj := TTestSuite.Create(AName);
+  try
+    Obj.AddTests(Self);
+    Result := Obj;
+  except
+    Obj.Free;
+    raise;
+  end;
 end;
 {$endif}
+
+procedure TBaseTestCase.CheckEquals(expected, actual, delta: Extended; const msg: string);
+begin
+  if (IsNan(expected) and IsNan(actual)) or (IsInfinite(expected) and IsInfinite(actual) or
+    (expected = actual)) then
+    Exit;
+
+  inherited CheckEquals(expected, actual, delta, msg);
+end;
+
+procedure TBaseTestCase.CheckEquals(expected, actual: Extended; const msg: string);
+begin
+  CheckEquals(expected, actual, DefaultDelta, msg);
+end;
 
 procedure TBaseTestCase.CheckEquals(expected, actual: JsValueType; const msg: string);
 begin
@@ -164,16 +209,16 @@ begin
     ChakraCoreCheck(JsDisposeRuntime(FRuntime));
 end;
 
-procedure TChakraCoreUtilsScripting.TestVersion;
+procedure TChakraCoreUtilsScripting.ChakraCoreVersion;
 begin
-  CheckEquals(Integer(1), CHAKRA_CORE_MAJOR_VERSION, 'major version number');
+  CheckEquals(Integer( 1), CHAKRA_CORE_MAJOR_VERSION, 'major version number');
   CheckEquals(Integer(11), CHAKRA_CORE_MINOR_VERSION, 'minor version number');
   CheckEquals(Integer(22), CHAKRA_CORE_PATCH_VERSION, 'patch version number');
 end;
 
 procedure TChakraCoreUtilsScripting.TestUndefined;
 const
-  SScript = 'this.result = undefined';
+  SScript = 'undefined';
   SName = 'TestUndefined.js';
 var
   Unicode: Boolean;
@@ -193,7 +238,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestNull;
 const
-  SScript = 'this.result = null';
+  SScript = 'null';
   SName = 'TestNull.js';
 var
   Unicode: Boolean;
@@ -214,7 +259,7 @@ end;
 procedure TChakraCoreUtilsScripting.TestInt;
 const
   IntValue = 42;
-  SScript = 'this.result = %d';
+  SScript = '%d';
   SName = 'TestInt.js';
 var
   Unicode: Boolean;
@@ -236,7 +281,7 @@ end;
 procedure TChakraCoreUtilsScripting.TestDouble;
 const
   DoubleValue: Double = 3.14;
-  SScript = 'this.result = %f';
+  SScript = '%f';
   SName = 'TestDouble.js';
 var
   Unicode: Boolean;
@@ -257,7 +302,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestInfinity;
 const
-  SScript = 'this.result = Infinity';
+  SScript = 'Infinity';
   SName = 'TestInfinity.js';
 var
   Unicode: Boolean;
@@ -277,7 +322,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestNaN;
 const
-  SScript = 'this.result = NaN';
+  SScript = 'NaN';
   SName = 'TestNaN.js';
 var
   Unicode: Boolean;
@@ -298,7 +343,7 @@ end;
 procedure TChakraCoreUtilsScripting.TestString;
 const
   StringValues: array[0..1] of UnicodeString = ('', 'Hello, world!');
-  SScript = 'this.result = "%s"';
+  SScript = '"%s"';
   SName = 'TestString.js';
 var
   Unicode: Boolean;
@@ -322,7 +367,7 @@ end;
 procedure TChakraCoreUtilsScripting.TestStringUnicode;
 const
   StringValues: array [0..1] of UTF8String = ('', #$E4#$BD#$A0#$E5#$A5#$BD);
-  SScript = 'this.result = "%s"';
+  SScript = '"%s"';
   SName = 'TestString.js';
 var
   Unicode: Boolean;
@@ -350,8 +395,8 @@ end;
 procedure TChakraCoreUtilsScripting.TestBoolean;
 const
   SScripts: array[Boolean] of string = (
-    'this.result = false',
-    'this.result = true'
+    'false',
+    'true'
   );
   SName = 'TestBoolean.js';
 var
@@ -376,7 +421,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestObject;
 const
-  SScript = 'this.result = this';
+  SScript = 'this';
   SName = 'TestObject.js';
 var
   Unicode: Boolean;
@@ -395,7 +440,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestFunction;
 const
-  SScript = 'this.result = function() { return 42; }';
+  SScript = '(function() { return 42; })';
   SName = 'TestFunction.js';
 var
   Unicode: Boolean;
@@ -414,7 +459,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestError;
 const
-  SScript = 'this.result = new Error("Test Error")';
+  SScript = 'new Error("Test Error")';
   SName = 'TestError.js';
 var
   Unicode: Boolean;
@@ -436,7 +481,7 @@ const
   IntElementValue = 42;
   DoubleElementValue = 3.14;
   StringElementValue: UnicodeString = 'Hello, world!';
-  SScript = 'this.result = [undefined, null, %d, %f, "%s", true, false, this, function() { return 42; }, new Error("Test Error")]';
+  SScript = '[undefined, null, %d, %f, "%s", true, false, this, function() { return 42; }, new Error("Test Error")]';
   SName = 'TestArray.js';
 var
   Unicode: Boolean;
@@ -466,7 +511,7 @@ begin
 
     ChakraCoreCheck(JsGetIndexedProperty(Result, IntToJsNumber(3), Element));
     CheckValueType(JsNumber, Element, 'element 3 type');
-    CheckEquals(DoubleElementValue, JsNumberToDouble(Element), 'element 3 value');
+    CheckEquals(DoubleElementValue, JsNumberToDouble(Element), 0.0000001, 'element 3 value');
     Check(JsEqual(DoubleToJsNumber(DoubleElementValue), Element, True), 'element 3 value');
 
     ChakraCoreCheck(JsGetIndexedProperty(Result, IntToJsNumber(4), Element));
@@ -497,7 +542,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestSymbol;
 const
-  SScript = 'this.result = Symbol(''foo'')';
+  SScript = 'Symbol(''foo'')';
   SName = 'TestSymbol.js';
 var
   Unicode: Boolean;
@@ -516,7 +561,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestArrayBuffer;
 const
-  SScript = 'this.result = new ArrayBuffer(1024)';
+  SScript = 'new ArrayBuffer(1024)';
   SName = 'TestArrayBuffer.js';
 var
   Unicode: Boolean;
@@ -536,15 +581,15 @@ end;
 procedure TChakraCoreUtilsScripting.TestTypedArray;
 const
   SScripts: array[JsTypedArrayType] of string = (
-    'this.result = new Int8Array(16)',
-    'this.result = new Uint8Array(16)',
-    'this.result = new Uint8ClampedArray(16)',
-    'this.result = new Int16Array(16)',
-    'this.result = new Uint16Array(16)',
-    'this.result = new Int32Array(16)',
-    'this.result = new Uint32Array(16)',
-    'this.result = new Float32Array(16)',
-    'this.result = new Float64Array(16)'
+    'new Int8Array(16)',
+    'new Uint8Array(16)',
+    'new Uint8ClampedArray(16)',
+    'new Int16Array(16)',
+    'new Uint16Array(16)',
+    'new Int32Array(16)',
+    'new Uint32Array(16)',
+    'new Float32Array(16)',
+    'new Float64Array(16)'
   );
   SName = 'TesTypedtArray.js';
 var
@@ -569,7 +614,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestDataView;
 const
-  SScript = 'this.result = new DataView(new ArrayBuffer(1024), 0, 1024)';
+  SScript = 'new DataView(new ArrayBuffer(1024), 0, 1024)';
   SName = 'TestArrayBuffer.js';
 var
   Unicode: Boolean;
@@ -886,7 +931,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestCallNew;
 const
-  SScript = 'this.result = new Object()';
+  SScript = 'new Object()';
   SName = 'TestCallNew.js';
 var
   Unicode: Boolean;
@@ -906,7 +951,7 @@ end;
 
 procedure TChakraCoreUtilsScripting.TestFPExceptions;
 const
-  SScript = 'var d = new Date(); this.Result = d.getTime();';
+  SScript = 'var d = new Date(); d.getTime();';
   SName = 'TestFPExceptions.js';
 var
   Unicode: Boolean;
@@ -1131,9 +1176,11 @@ end;
 
 initialization
 {$ifdef FPC}
-  RegisterTests([TChakraCoreUtilsScripting, TChakraCorePrototypes]);
+  RegisterTest('ChakraCoreUtils', TTestSuite.Create(TChakraCoreUtilsScripting, 'Scripting'));
+  RegisterTest('ChakraCoreUtils', TTestSuite.Create(TChakraCorePrototypes, 'Prototypes'));
 {$else}
-  RegisterTests([TChakraCoreUtilsScripting.Suite, TChakraCorePrototypes.Suite]);
+  RegisterTest('ChakraCoreUtils', TChakraCoreUtilsScripting.Suite('Scripting'));
+  RegisterTest('ChakraCoreUtils', TChakraCorePrototypes.Suite('Prototypes'));
 {$endif}
 
 end.

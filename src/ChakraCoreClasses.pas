@@ -340,6 +340,32 @@ type
     property Instance: JsValueRef read FInstance;
   end;
 
+  TProxy = class
+  private
+    FInstance: JsValueRef;
+    FTarget: JsValueRef;
+  protected
+    function DoApply(Func: JsValueRef; const Args: JsValueRefArray): JsValueRef; virtual;
+    function DoConstruct(const Args: JsValueRefArray; NewTarget: JsValueRef): JsValueRef; virtual;
+    function DoDefineProperty(Prop: JsValueRef; PropDescriptor: JsValueRef): Boolean; virtual;
+    function DoDeleteProperty(Prop: JsValueRef): Boolean; virtual;
+    function DoGet(Prop: JsValueRef): JsValueRef; virtual;
+    function DoGetOwnPropertyDescriptor(Prop: JsValueRef): JsValueRef; virtual;
+    function DoGetPrototypeOf: JsValueRef; virtual;
+    function DoHas(Prop: JsValueRef): Boolean; virtual;
+    function DoIsExtensible: Boolean; virtual;
+    function DoOwnKeys: JsValueRef; virtual;
+    function DoPreventExtensions: Boolean; virtual;
+    function DoSet(Prop, Value: JsValueRef): Boolean; virtual;
+    function DoSetPrototypeOf(Prototype: JsValueRef): Boolean; virtual;
+  public
+    constructor Create(ATarget: JsValueRef); virtual;
+    destructor Destroy; override;
+
+    property Instance: JsValueRef read FInstance;
+    property Target: JsValueRef read FTarget;
+  end;
+
 implementation
 
 type
@@ -636,6 +662,255 @@ function NotifyModuleReadyCallback(referencingModule: JsModuleRecord; exceptionV
   {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
 begin
   Result := TChakraCoreContext.CurrentContext.HandleNotifyModuleReadyCallback(referencingModule, exceptionVar);
+end;
+
+type
+  TProxyApplyArgKind = (paaCallee, paaTarget, paaThisArg, paaArgs);
+  PJsProxyApplyArgs = ^TJsProxyApplyArgs;
+  TJsProxyApplyArgs = array[TProxyApplyArgKind] of JsValueRef;
+
+function Proxy_ApplyCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyApplyArgs; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 4) then
+    raise Exception.Create('Invalid proxy ''apply'' arguments');
+
+  if not JsEqual(Args^[paaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''apply'' target not the registered target');
+
+  Result := Proxy.DoApply(Args^[paaThisArg], JsValueRefArray(Args^[paaArgs]));
+end;
+
+type
+  TProxyConstructArgKind = (pcaCallee, pcaTarget, pcaArgs, pcaNewTarget);
+  PJsProxyConstructArgs = ^TJsProxyConstructArgs;
+  TJsProxyConstructArgs = array[TProxyConstructArgKind] of JsValueRef;
+
+function Proxy_ConstructCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyConstructArgs; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 4) then
+    raise Exception.Create('Invalid proxy ''construct'' arguments');
+
+  if not JsEqual(Args^[pcaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''construct'' target not the registered target');
+
+  Result := Proxy.DoConstruct(JsValueRefArray(Args^[pcaArgs]), Args^[pcaNewTarget]);
+end;
+
+type
+  TProxyDefinePropertyArgKind = (pdpaCallee, pdpaTarget, pdpaProperty, pdpaDescriptor);
+  PJsProxyDefinePropertyArgs = ^TJsProxyDefinePropertyArgs;
+  TJsProxyDefinePropertyArgs = array[TProxyDefinePropertyArgKind] of JsValueRef;
+
+function Proxy_DefinePropertyCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyDefinePropertyArgs; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 4) then
+    raise Exception.Create('Invalid proxy ''defineProperty'' arguments');
+
+  if not JsEqual(Args^[pdpaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''defineProperty'' target not the registered target');
+
+  Result := BooleanToJsBoolean(Proxy.DoDefineProperty(Args^[pdpaProperty], Args^[pdpaDescriptor]));
+end;
+
+type
+  TProxyDeletePropertyArgKind = (pxpaCallee, pxpaTarget, pxpaProperty);
+  PJsProxyDeletePropertyArgs = ^TJsProxyDeletePropertyArgs;
+  TJsProxyDeletePropertyArgs = array[TProxyDeletePropertyArgKind] of JsValueRef;
+
+function Proxy_DeletePropertyCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyDeletePropertyArgs; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 3) then
+    raise Exception.Create('Invalid proxy ''deleteProperty'' arguments');
+
+  if not JsEqual(Args^[pxpaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''deleteProperty'' target not the registered target');
+
+  Result := BooleanToJsBoolean(Proxy.DoDeleteProperty(Args^[pxpaProperty]));
+end;
+
+type
+  TProxyGetArgKind = (pgaCallee, pgaTarget, pgaProp, pgaReceiver);
+  PJsProxyGetArgs = ^TJsProxyGetArgs;
+  TJsProxyGetArgs = array[TProxyGetArgKind] of JsValueRef;
+
+function Proxy_GetCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyGetArgs; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 4) then
+    raise Exception.Create('Invalid proxy ''get'' arguments');
+
+  if not JsEqual(Args^[pgaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''get'' target not the registered target');
+
+  Result := Proxy.DoGet(Args^[pgaProp]);
+end;
+
+type
+  TProxyGetOwnPropDescArgKind = (pgopdaCallee, pgopdaTarget, pgopdaProp);
+  PJsProxyGetOwnPropDescArgs = ^TJsProxyGetOwnPropDescArgs;
+  TJsProxyGetOwnPropDescArgs = array[TProxyGetOwnPropDescArgKind] of JsValueRef;
+
+function Proxy_GetOwnPropertyDescriptorCallback(Callee: JsValueRef; IsConstructCall: bool;
+  Args: PJsProxyGetOwnPropDescArgs; ArgCount: Word; CallbackState: Pointer): JsValueRef;
+  {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 3) then
+    raise Exception.Create('Invalid proxy ''getOwnPropertyDescriptor'' arguments');
+
+  if not JsEqual(Args^[pgopdaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''getOwnPropertyDescriptor'' target not the registered target');
+
+  Result := Proxy.DoGetOwnPropertyDescriptor(Args^[pgopdaProp]);
+end;
+
+type
+  TProxyGetPrototypeOfArgKind = (pgpoaCallee, pgpoaTarget);
+  PJsProxyGetPrototypeOfArgs = ^TJsProxyGetPrototypeOfArgs;
+  TJsProxyGetPrototypeOfArgs = array[TProxyGetPrototypeOfArgKind] of JsValueRef;
+
+function Proxy_GetPrototypeOfCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyGetPrototypeOfArgs;
+  ArgCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 2) then
+    raise Exception.Create('Invalid proxy ''getPrototypeOf'' arguments');
+
+  if not JsEqual(Args^[pgpoaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''getPrototypeOf'' target not the registered target');
+
+  Result := Proxy.DoGetPrototypeOf;
+end;
+
+type
+  TProxyHasArgKind = (phaCallee, phaTarget, phaProp);
+  PJsProxyHasArgs = ^TJsProxyHasArgs;
+  TJsProxyHasArgs = array[TProxyHasArgKind] of JsValueRef;
+
+function Proxy_HasCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyHasArgs; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 3) then
+    raise Exception.Create('Invalid proxy ''has'' arguments');
+
+  if not JsEqual(Args^[phaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''has'' target not the registered target');
+
+  Result := BooleanToJsBoolean(Proxy.DoHas(Args^[phaProp]));
+end;
+
+type
+  TProxyIsExtensibleArgKind = (pieaCallee, pieaTarget);
+  PJsProxyIsExtensibleArgs = ^TJsProxyIsExtensibleArgs;
+  TJsProxyIsExtensibleArgs = array[TProxyIsExtensibleArgKind] of JsValueRef;
+
+function Proxy_IsExtensibleCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyIsExtensibleArgs;
+  ArgCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 2) then
+    raise Exception.Create('Invalid proxy ''isExtensible'' arguments');
+
+  if not JsEqual(Args^[pieaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''isExtensible'' target not the registered target');
+
+  Result := BooleanToJsBoolean(Proxy.DoIsExtensible);
+end;
+
+type
+  TProxyOwnKeysArgKind = (pokaCallee, pokaTarget);
+  PJsProxyOwnKeysArgs = ^TJsProxyOwnKeysArgs;
+  TJsProxyOwnKeysArgs = array[TProxyOwnKeysArgKind] of JsValueRef;
+
+function Proxy_OwnKeysCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyOwnKeysArgs; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 2) then
+    raise Exception.Create('Invalid proxy ''has'' arguments');
+
+  if not JsEqual(Args^[pokaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''has'' target not the registered target');
+
+  Result := Proxy.DoOwnKeys;
+end;
+
+type
+  TProxyPreventExtensionsArgKind = (ppeaCallee, ppeaTarget);
+  PJsProxyPreventExtensionsArgs = ^TJsProxyPreventExtensionsArgs;
+  TJsProxyPreventExtensionsArgs = array[TProxyPreventExtensionsArgKind] of JsValueRef;
+
+function Proxy_PreventExtensionsCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxyPreventExtensionsArgs;
+  ArgCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 2) then
+    raise Exception.Create('Invalid proxy ''preventExtensions'' arguments');
+
+  if not JsEqual(Args^[ppeaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''preventExtensions'' target not the registered target');
+
+  Proxy.DoPreventExtensions;
+  Result := JsTrueValue;
+end;
+
+type
+  TProxySetArgKind = (psaCallee, psaTarget, psaProp, psaValue, psaReceiver);
+  PJsProxySetArgs = ^TJsProxySetArgs;
+  TJsProxySetArgs = array[TProxySetArgKind] of JsValueRef;
+
+function Proxy_SetCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxySetArgs; ArgCount: Word;
+  CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 5) then
+    raise Exception.Create('Invalid proxy ''set'' arguments');
+
+  if not JsEqual(Args^[psaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''set'' target not the registered target');
+
+  Result := BooleanToJsBoolean(Proxy.DoSet(Args^[psaProp], Args^[psaValue]));
+end;
+
+type
+  TProxySetPrototypeOfArgKind = (pspoaCallee, pspoaTarget, pspoaPrototype);
+  PJsProxySetPrototypeOfArgs = ^TJsProxySetPrototypeOfArgs;
+  TJsProxySetPrototypeOfArgs = array[TProxySetPrototypeOfArgKind] of JsValueRef;
+
+function Proxy_SetPrototypeOfCallback(Callee: JsValueRef; IsConstructCall: bool; Args: PJsProxySetPrototypeOfArgs;
+  ArgCount: Word; CallbackState: Pointer): JsValueRef; {$ifdef WINDOWS}stdcall;{$else}cdecl;{$endif}
+var
+  Proxy: TProxy absolute CallbackState;
+begin
+  if not Assigned(Args) or (ArgCount < 3) then
+    raise Exception.Create('Invalid proxy ''setPrototypeOf'' arguments');
+
+  if not JsEqual(Args^[pspoaTarget], Proxy.Target) then
+    raise Exception.Create('Proxy ''setPrototypeOf'' target not the registered target');
+
+  Result := BooleanToJsBoolean(Proxy.DoSetPrototypeOf(Args^[pspoaPrototype]));
 end;
 
 function RuntimeOptionsToJsRuntimeAttributes(Value: TChakraCoreRuntimeOptions): Cardinal;
@@ -1673,7 +1948,7 @@ begin
   // TODO detect context already destroyed
   if Assigned(FInstance) then
     ChakraCommon.JsSetExternalData(FInstance, nil);
-  inherited;
+  inherited Destroy;
 end;
 
 function TNativeObject.AddRef: Integer;
@@ -1705,6 +1980,115 @@ end;
 function TNativeObject.Release: Integer;
 begin
   Result := JsRelease(FInstance);
+end;
+
+{ TProxy protected }
+
+function TProxy.DoApply(Func: JsValueRef; const Args: JsValueRefArray): JsValueRef;
+begin
+  Result := JsCallFunction(Func, Args);
+end;
+
+function TProxy.DoConstruct(const Args: JsValueRefArray; NewTarget: JsValueRef): JsValueRef;
+begin
+  Result := JsNew(NewTarget, NewTarget, Args);
+end;
+
+function TProxy.DoDefineProperty(Prop, PropDescriptor: JsValueRef): Boolean;
+begin
+  ChakraCoreCheck(ChakraCore.JsObjectDefineProperty(Target, Prop, PropDescriptor, ByteBool(Result)));
+end;
+
+function TProxy.DoDeleteProperty(Prop: JsValueRef): Boolean;
+var
+  Deleted: JsValueRef;
+begin
+  ChakraCoreCheck(ChakraCore.JsObjectDeleteProperty(Target, Prop, True, Deleted));
+  Result := JsBooleanToBoolean(Deleted);
+end;
+
+function TProxy.DoGet(Prop: JsValueRef): JsValueRef;
+begin
+  Result := JsGetProperty(Target, Prop);
+end;
+
+function TProxy.DoGetOwnPropertyDescriptor(Prop: JsValueRef): JsValueRef;
+begin
+  ChakraCoreCheck(JsObjectGetOwnPropertyDescriptor(Target, Prop, Result));
+end;
+
+function TProxy.DoGetPrototypeOf: JsValueRef;
+begin
+  Result := JsGetPrototype(Target);
+end;
+
+function TProxy.DoHas(Prop: JsValueRef): Boolean;
+begin
+  Result := JsHasProperty(Target, Prop);
+end;
+
+function TProxy.DoIsExtensible: Boolean;
+begin
+  ChakraCoreCheck(JsGetExtensionAllowed(Target, ByteBool(Result)));
+end;
+
+function TProxy.DoOwnKeys: JsValueRef;
+begin
+  Result := JsCallFunction('keys', [], JsGetProperty(JsGlobal, 'Object'));
+end;
+
+function TProxy.DoPreventExtensions: Boolean;
+begin
+  ChakraCoreCheck(JsPreventExtension(Target));
+  Result := True;
+end;
+
+function TProxy.DoSet(Prop, Value: JsValueRef): Boolean;
+begin
+  JsSetProperty(Target, Prop, Value);
+  Result := True;
+end;
+
+function TProxy.DoSetPrototypeOf(Prototype: JsValueRef): Boolean;
+begin
+  ChakraCoreCheck(JsSetPrototype(Target, Prototype));
+  Result := True;
+end;
+
+{ TProxy public }
+
+constructor TProxy.Create(ATarget: JsValueRef);
+var
+  Handler: JsValueRef;
+begin
+  inherited Create;
+  Handler := JsCreateObject;
+  JsSetCallback(Handler, 'apply',                    @Proxy_ApplyCallback, Self);
+  JsSetCallback(Handler, 'construct',                @Proxy_ConstructCallback, Self);
+  JsSetCallback(Handler, 'defineProperty',           @Proxy_DefinePropertyCallback, Self);
+  JsSetCallback(Handler, 'deleteProperty',           @Proxy_DeletePropertyCallback, Self);
+  JsSetCallback(Handler, 'get',                      @Proxy_GetCallback, Self);
+  JsSetCallback(Handler, 'getOwnPropertyDescriptor', @Proxy_GetOwnPropertyDescriptorCallback, Self);
+  JsSetCallback(Handler, 'getPrototypeOf',           @Proxy_GetPrototypeOfCallback, Self);
+  JsSetCallback(Handler, 'has',                      @Proxy_HasCallback, Self);
+  JsSetCallback(Handler, 'isExtensible',             @Proxy_IsExtensibleCallback, Self);
+  JsSetCallback(Handler, 'ownKeys',                  @Proxy_OwnKeysCallback, Self);
+  JsSetCallback(Handler, 'preventExtensions',        @Proxy_PreventExtensionsCallback, Self);
+  JsSetCallback(Handler, 'set',                      @Proxy_SetCallback, Self);
+  JsSetCallback(Handler, 'setPrototypeOf',           @Proxy_SetPrototypeOfCallback, Self);
+  FTarget := ATarget;
+  JsAddRef(FTarget);
+  FInstance := JsNew('Proxy', [FTarget, Handler]);
+  JsAddRef(FInstance);
+end;
+
+destructor TProxy.Destroy;
+begin
+  if Assigned(FInstance) then
+    JsRelease(FInstance);
+  if Assigned(FTarget) then
+    JsRelease(FTarget);
+  inherited Destroy;
 end;
 
 end.

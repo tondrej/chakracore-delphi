@@ -150,8 +150,8 @@ function Test {
     scp -r $BASE_DIR/bin/$CPU_TARGET-$OS_TARGET/$BUILD_MODE/* $TARGET_USER@$TARGET_HOST:$TARGET_DIR/
     ssh $TARGET_USER@$TARGET_HOST "LD_LIBRARY_PATH=$TARGET_DIR/ $TARGET_DIR/ChakraCoreTests --all --progress --format=plain" >> test.log
   elif [ "$OS_TARGET" = "darwin" ]; then
-    # kaitain
-    TARGET_HOST=kaitain.local
+    # ix
+    TARGET_HOST=ix.local
     TARGET_DIR=/Users/tondrej/Test
     DYLD_DIR=/Users/tondrej/Development/ChakraCore/out/Release/bin/ChakraCore
 

@@ -95,7 +95,7 @@
 						<VersionInfoKeys Name="FileDescription"/>
 						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName">ChakraCoreTestsUI</VersionInfoKeys>
-						<VersionInfoKeys Name="LegalCopyright">© 2020 Ondrej Kelle</VersionInfoKeys>
+						<VersionInfoKeys Name="LegalCopyright">© 2021 Ondrej Kelle</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>
 						<VersionInfoKeys Name="OriginalFilename">ChakraCoreTestsUI</VersionInfoKeys>
 						<VersionInfoKeys Name="ProductName">chakracore-delphi</VersionInfoKeys>

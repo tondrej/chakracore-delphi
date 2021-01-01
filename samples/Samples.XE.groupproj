@@ -21,7 +21,7 @@
 			<Projects Include="NodeSample\NodeSample.XE.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="WmiSample\WmiSample.dproj">
+			<Projects Include="WmiSample\WmiSample.XE.dproj">
 				<Dependencies/>
 			</Projects>
 		</ItemGroup>
@@ -86,23 +86,23 @@
 		<Target Name="NodeSample_XE:Make">
 			<MSBuild Projects="NodeSample\NodeSample.XE.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="WmiSample">
-			<MSBuild Projects="WmiSample\WmiSample.dproj"/>
+		<Target Name="WmiSample_XE">
+			<MSBuild Projects="WmiSample\WmiSample.XE.dproj"/>
 		</Target>
-		<Target Name="WmiSample:Clean">
-			<MSBuild Projects="WmiSample\WmiSample.dproj" Targets="Clean"/>
+		<Target Name="WmiSample_XE:Clean">
+			<MSBuild Projects="WmiSample\WmiSample.XE.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="WmiSample:Make">
-			<MSBuild Projects="WmiSample\WmiSample.dproj" Targets="Make"/>
+		<Target Name="WmiSample_XE:Make">
+			<MSBuild Projects="WmiSample\WmiSample.XE.dproj" Targets="Make"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="ChakraCoreTests_XE;ChakraCoreTestsUI_XE;SimpleHost_XE;ChakraCoreHostSample_XE;WasmSample_XE;NodeSample_XE;WmiSample"/>
+			<CallTarget Targets="ChakraCoreTests_XE;ChakraCoreTestsUI_XE;SimpleHost_XE;ChakraCoreHostSample_XE;WasmSample_XE;NodeSample_XE;WmiSample_XE"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="ChakraCoreTests_XE:Clean;ChakraCoreTestsUI_XE:Clean;SimpleHost_XE:Clean;ChakraCoreHostSample_XE:Clean;WasmSample_XE:Clean;NodeSample_XE:Clean;WmiSample:Clean"/>
+			<CallTarget Targets="ChakraCoreTests_XE:Clean;ChakraCoreTestsUI_XE:Clean;SimpleHost_XE:Clean;ChakraCoreHostSample_XE:Clean;WasmSample_XE:Clean;NodeSample_XE:Clean;WmiSample_XE:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="ChakraCoreTests_XE:Make;ChakraCoreTestsUI_XE:Make;SimpleHost_XE:Make;ChakraCoreHostSample_XE:Make;WasmSample_XE:Make;NodeSample_XE:Make;WmiSample:Make"/>
+			<CallTarget Targets="ChakraCoreTests_XE:Make;ChakraCoreTestsUI_XE:Make;SimpleHost_XE:Make;ChakraCoreHostSample_XE:Make;WasmSample_XE:Make;NodeSample_XE:Make;WmiSample_XE:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>

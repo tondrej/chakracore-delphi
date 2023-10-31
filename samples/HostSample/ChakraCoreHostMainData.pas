@@ -101,7 +101,7 @@ var
   DataModule: TDataModuleMain absolute CallbackState;
   AMessage: TTaskMessage;
   Delay: Cardinal;
-  FuncArgs: array[0..0] of JsValueRef;
+  FuncArgs: array of JsValueRef;
   I: Integer;
 begin
   Result := JsUndefinedValue;
@@ -116,6 +116,7 @@ begin
 
   if ArgCount >= 4 then
   begin
+    SetLength(FuncArgs, ArgCount - 3);
     for I := 0 to ArgCount - 4 do
       FuncArgs[I] := Args^[I + 3];
   end;

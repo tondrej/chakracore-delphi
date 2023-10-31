@@ -168,29 +168,26 @@ var
   DataModule: TDataModuleMain absolute CallbackState;
   AMessage: TTaskMessageEx;
   Delay: Cardinal;
-  FuncArgs: JsValueRefArray;
+  FuncArgs: array of JsValueRef;
+  I: Integer;
 begin
   Result := JsUndefinedValue;
   if DataModule.FTerminated then
     Exit;
 
-  // arg 0: thisarg
-  // arg 1: task
-  if ArgCount < 2 then
+  if ArgCount < 2 then // thisarg, function to call, optional: delay, function args
     raise Exception.Create('Invalid arguments');
 
-  // arg 2: (optional) delay
   if ArgCount >= 3 then
     Delay := JsNumberToInt(Args^[2])
   else
     Delay := 0;
 
-  // arg 3...: (optional) function args
-  FuncArgs := nil;
   if ArgCount >= 4 then
   begin
     SetLength(FuncArgs, ArgCount - 3);
-    Move(Args^[3], FuncArgs[0], (ArgCount - 3) * SizeOf(JsValueRef));
+    for I := 0 to ArgCount - 4 do
+      FuncArgs[I] := Args^[I + 3];
   end;
 
   AMessage := TTaskMessageEx.Create(DataModule.FContext, Args^[1], Args^[0], FuncArgs, Delay, RepeatCount);
